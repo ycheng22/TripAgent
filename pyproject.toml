@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tripagent"
+version = "0.1.0"
+description = "TripAgent P2 Core"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0.0",
+    "fastapi",
+    "uvicorn",
+    "langgraph>=0.2.0",
+    "retrieval-core @ git+file:///d:/Github_Clones/RetrievalCore@v0.2.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "mypy",
+    "ruff",
+    "httpx"
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "core", "adapters"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true

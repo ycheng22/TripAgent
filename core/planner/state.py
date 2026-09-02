@@ -1,0 +1,19 @@
+from typing import TypedDict, Any
+from core.models import TripRequest, Constraint, Itinerary, Violation, PlanResult
+from core.audit import AuditTrail
+from retrieval_core.models import ScoredHit
+
+class PlannerState(TypedDict):
+    request: TripRequest | None
+    constraints: list[Constraint]
+    retrieved_hits: list[ScoredHit]
+    itinerary: Itinerary | None
+    violations: list[Violation]
+    audit_trail: AuditTrail
+    step_count: int
+    total_tokens: int
+    total_cost: float
+    replan_count: int
+    status: str
+    which_limit: str | None
+    plan_result: PlanResult | None

@@ -1,0 +1,38 @@
+# TripAgent Phase 1 & 2 Walkthrough
+
+## What Was Accomplished
+
+Both Phase 1 (Core Foundations) and Phase 2 (Deterministic Validators) have been successfully implemented and tested! 
+
+### Phase 1: Core Foundations
+
+- **Project Setup**: Initialized `pyproject.toml` with `uv` as the package manager and correctly linked `retrieval-core` (using tag `v0.2.0`). Created `app`, `core`, `adapters`, and `tests` directories.
+- **Domain Models**: Defined the core data structures (`Coordinate`, `Constraint`, `TripRequest`, `Venue`, `TransitLeg`, `ItineraryStep`, `Itinerary`, `Violation`, `PlanResult`, `AuditRecord`, etc.) in `core/models.py`.
+- **Tool Layer**: Built a strict `Tool` protocol and `ToolRegistry` in `core/tools/base.py`, ensuring all write tools (like `hold_reservation`, `book_transit`, and `send_confirmation`) enforce the use of an `idempotency_key` to guarantee safe replays. Read tools were also stubbed out.
+- **Governance & Circuit Breakers**: Implemented `AuditTrail` for tracing actions and `CircuitBreakers` mapped against `LimitConfig` (max_steps, max_tokens, max_cost, max_replans).
+- **Planner State Machine**: Built a LangGraph state machine (`core/planner/graph.py`) containing `parse_constraints`, `retrieve`, `draft_itinerary`, `validate`, `replan`, `finalise`, and `abort`. 
+  > [!NOTE]
+  > The circuit breakers correctly intercept transitions between nodes and will gracefully route the state to an `abort` node if limits are exceeded.
+
+### Phase 2: Deterministic Validators
+
+Implemented the four non-LLM, deterministic validators to strictly enforce constraints:
+1. **Connectivity**: Verifies that any itinerary switching cities includes a valid transit leg between them. This inherently covers our Visa logic strategy, as non-Schengen transit legs simply won't exist.
+2. **Geography**: Verifies using the Haversine formula that travel distances physically permit the time gap given, catching overlap and teletransportation.
+3. **Opening Hours**: Verifies that venues are open during the specified visit hours and rejects visits during closed days.
+4. **Budget**: Verifies that the total cost does not exceed the user's hard budget.
+
+- **Must-Fail Fixtures**: Created a script `tests/generate_fixtures.py` which generated 10 JSON fixture variants modelling our "must fail" scenarios (e.g., teleporting, exceeding budget, negative travel time, arriving before opening time, crossing visas).
+
+## Validation Results
+
+All test suites ran and passed successfully:
+- `tests/test_tool_registry.py` (Registry enforces idempotency rules)
+- `tests/test_circuit_breakers.py` (Limits correctly halt execution)
+- `tests/test_graph_e2e.py` (LangGraph loops through successfully or aborts correctly)
+- `tests/test_validators.py` (All 4 validators correctly detect violations from the 10 must-fail fixtures)
+- `tests/test_replan_loop.py` (LangGraph correctly hits the max replan loop count when failing validation continuously, properly marking the result as `infeasible`)
+
+## Next Steps
+
+With the rigid foundation, state machine, tools, and non-LLM validators complete, we are ready to move onto Phase 3: bringing in the LLM-powered drafting nodes and actual real-world APIs.

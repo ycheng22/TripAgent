@@ -1,0 +1,379 @@
+# Day 3 · P2 地基：Tool Layer, State Machine, Circuit Breakers, Audit Trail, Four Validators
+
+Build the foundational runtime for TripAgent: tool protocols, LangGraph planner skeleton, triple circuit breakers, audit trail, and four deterministic validators with replan loop. All data sources are stubbed. This is milestones T0 + T1 from SPEC §11.
+
+---
+
+## ⚠️ Architectural Finding: retrieval-core Type Mismatch
+
+> [!CAUTION]
+> **retrieval-core is product-centric and does not fit the travel domain.**
+>
+> The current contracts in retrieval-core:
+> - `Product` has only `product_id` and `title` — no coordinates, opening hours, or city
+> - `CorpusAdapter` protocol has `get_product(product_id)` / `mget_products(product_ids)` — returning `Product`
+> - `ScoredHit` references `product_id`, not a generic `doc_id`
+>
+> TripAgent needs a `Venue` with `venue_id`, `name`, `city`, `coord`, `source_id`, `source_version`, and adapters that return venue-like documents.
+>
+> **Per AGENTS.md and prompt #8, I must NOT work around this with a local type.** This is the exact mismatch the prompt said to report.
+>
+> **Options (your call):**
+> 1. **Generalize retrieval-core** before Day 3 — rename `Product` → `Document` (with a generic metadata dict), rename `product_id` → `doc_id` in `ScoredHit`, rename `CorpusAdapter.get_product` → `get_document`. ShopRank would then subclass/alias `Document` as `Product`. This is the cleanest long-term fix.
+> 2. **Add a parallel `Document` model** to retrieval-core alongside `Product` — less disruptive to ShopRank but messier.
+> 3. **Defer retrieval-core integration** — build TripAgent's `Venue` locally today, and reconcile when retrieval-core is generalized. This explicitly violates prompt #8 but avoids blocking.
+
+## Open Questions
+
+> [!IMPORTANT]
+> ### Q1: How do you want to resolve the Product ↔ Venue mismatch?
+> Choose one of the three options above. Option 1 is recommended — it's a small refactor (retrieval-core has ~40 lines of models) but it unblocks both projects cleanly. If you pick Option 1, I should do that refactor first (as a separate PR in RetrievalCore), tag `v0.2.0`, and then proceed with TripAgent.
+
+> [!IMPORTANT]
+> ### Q2: LangGraph — do you already have it installed / a preferred version?
+> langgraph is a required dependency. I'll add `langgraph>=0.2.0` to pyproject.toml. Confirm if you want a specific version pinned.
+
+> [!IMPORTANT]
+> ### Q3: The 10 must-fail fixtures — you said "手工构造" (hand-write them). Should I draft them for your review, or do you want to write them yourself?
+> The SPEC says these must be human-written. I can produce a draft set for you to review/edit, or I can create the file structure with placeholders and you fill in the JSON.
+
+> [!IMPORTANT]
+> ### Q4: "needs visa" border check (must-fail case #6) — which validator owns this?
+> None of the four SPEC validators (connectivity, opening_hours, geography, budget) naturally handle visa requirements. Options:
+> - Treat it as a **connectivity** violation (no valid GTFS trip across a border requiring a visa)
+> - Exclude it from the four-validator scope and mark it as a known limitation
+> - Add a fifth lightweight validator
+>
+> Recommendation: model it as a connectivity failure — "no transit leg exists between Prague and a non-Schengen city" — since the GTFS feed simply won't contain that route.
+
+> [!IMPORTANT]
+> ### Q5: "Overlapping activities" (must-fail case #10) — which validator?
+> Two activities at the same time slot could be caught by `geography` (can't be in two places) or `opening_hours` (time conflict). Recommendation: treat as `geography` — "zero travel time between two distinct coordinates at overlapping times is physically impossible."
+
+---
+
+## Proposed Changes
+
+The implementation is split into two phases matching the two AI prompts. **Phase 1 (T0)** builds the skeleton with stub data; **Phase 2 (T1)** fills in validators and the replan loop.
+
+### Phase 1 — T0: Tool Layer, State Machine, Circuit Breakers, Audit Trail
+
+---
+
+#### Project Setup
+
+##### [NEW] [pyproject.toml](file:///d:/Github_Clones/TripAgent/pyproject.toml)
+- Python 3.12, hatchling build
+- Dependencies: `pydantic>=2.0`, `fastapi`, `uvicorn`, `langgraph`
+- retrieval-core as editable local path for dev, pinned git tag `v0.1.0` for CI (assuming Q1 is resolved first — may become `v0.2.0`)
+- Dev deps: `pytest`, `pytest-asyncio`, `mypy`, `ruff`, `httpx`
+
+##### [NEW] [.env.example](file:///d:/Github_Clones/TripAgent/.env.example)
+- `ALLOWED_ORIGINS`, `MAX_STEPS`, `MAX_TOKENS_PER_TASK`, `MAX_COST_PER_TASK`, `MAX_REPLANS`
+
+---
+
+#### Domain Models — `core/models.py`
+
+##### [NEW] [core/models.py](file:///d:/Github_Clones/TripAgent/core/models.py)
+All Pydantic v2 models from SPEC §3.2:
+- `Coordinate`, `Constraint`, `TripRequest`
+- `Venue` — **depends on Q1 resolution** (either extends retrieval-core's generalized `Document` or is a local type with a documented violation)
+- `TransitLeg`, `ItineraryStep`, `Itinerary`
+- `Violation` (validator name, severity, step_index, explanation, breached_constraint)
+- `PendingAction` (action_id, tool_name, args, idempotency_key, status, result)
+- `PlanResult` (status: finalised|infeasible|aborted, itinerary, violations, which_limit, audit_trail)
+- `OpeningHours`, `Price`, `HoldResult`, `BookingResult`, `SendResult` — tool return types
+
+---
+
+#### Tool Layer — `core/tools/`
+
+##### [NEW] [core/tools/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/core/tools/__init__.py)
+Re-exports.
+
+##### [NEW] [core/tools/base.py](file:///d:/Github_Clones/TripAgent/core/tools/base.py)
+- `Tool` Protocol: `name: str`, `description: str`, `args_model: type[BaseModel]`, `access: Literal["read", "write"]`, `execute(args) -> BaseModel`
+- For write tools: `idempotency_key(args) -> str`
+- `ToolRegistry` class:
+  - `register(tool)` — refuses write tools lacking `idempotency_key` (raises `ValueError`)
+  - `get(name)`, `list_read()`, `list_write()`
+
+##### [NEW] [core/tools/search_attractions.py](file:///d:/Github_Clones/TripAgent/core/tools/search_attractions.py)
+Read tool. Stub returns 2-3 fake venues with `source_id="wikivoyage"`, `source_version="2024-01-stub"`.
+
+##### [NEW] [core/tools/get_opening_hours.py](file:///d:/Github_Clones/TripAgent/core/tools/get_opening_hours.py)
+Read tool. Stub returns fixed hours per venue_id.
+
+##### [NEW] [core/tools/find_transit_trips.py](file:///d:/Github_Clones/TripAgent/core/tools/find_transit_trips.py)
+Read tool. Stub returns 1-2 fake `TransitLeg` with `source_id="gtfs-amsterdam"`, `source_version="2024-01-stub"`.
+
+##### [NEW] [core/tools/estimate_walk_time.py](file:///d:/Github_Clones/TripAgent/core/tools/estimate_walk_time.py)
+Read tool. Uses haversine formula with configurable speed (default 4.5 km/h). Returns seconds + source metadata.
+
+##### [NEW] [core/tools/lookup_price.py](file:///d:/Github_Clones/TripAgent/core/tools/lookup_price.py)
+Read tool. Returns `Price | None`. Stub has a small lookup dict; missing items return `None` (never estimates).
+
+##### [NEW] [core/tools/hold_reservation.py](file:///d:/Github_Clones/TripAgent/core/tools/hold_reservation.py)
+Write tool. Idempotency key: `{itinerary_id}:{step_index}:{resource_id}`. Stub returns `HoldResult`.
+
+##### [NEW] [core/tools/book_transit.py](file:///d:/Github_Clones/TripAgent/core/tools/book_transit.py)
+Write tool. Idempotency key: `{itinerary_id}:{step_index}:{trip_id}`. Stub returns `BookingResult`.
+
+##### [NEW] [core/tools/send_confirmation.py](file:///d:/Github_Clones/TripAgent/core/tools/send_confirmation.py)
+Write tool. Idempotency key: `{itinerary_id}:{channel}:{sha256(recipient)}`. Stub returns `SendResult`.
+
+---
+
+#### Circuit Breakers — `core/planner/limits.py`
+
+##### [NEW] [core/planner/limits.py](file:///d:/Github_Clones/TripAgent/core/planner/limits.py)
+- `LimitConfig`: `max_steps=25`, `max_tokens_per_task=60000`, `max_cost_per_task=0.05`
+- `CircuitBreakers` class with `check(state) -> Violation | None` — examines current step count, accumulated tokens, accumulated cost
+- Returns a `LimitBreached` result (not an exception) containing `which_limit`, partial itinerary, and the audit trail so far
+- Checked on **every graph transition** via a LangGraph conditional edge
+
+---
+
+#### Audit Trail — `core/audit.py`
+
+##### [NEW] [core/audit.py](file:///d:/Github_Clones/TripAgent/core/audit.py)
+- `AuditRecord` (Pydantic v2): exactly 11 fields — `step_index`, `action_type`, `tool_name`, `source_id`, `source_version`, `duration_ms`, `tokens_in`, `tokens_out`, `cost_usd`, `validator_failures`, `timestamp`
+- `AuditTrail`:
+  - `records: list[AuditRecord]`
+  - `append(record)` — adds a record
+  - `to_markdown() -> str` — renders a pipe-delimited table suitable for README
+  - `to_json(run_id, base_dir) -> Path` — writes to `audit_trails/<run_id>.json`
+
+---
+
+#### State Machine — `core/planner/graph.py`
+
+##### [NEW] [core/planner/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/core/planner/__init__.py)
+
+##### [NEW] [core/planner/state.py](file:///d:/Github_Clones/TripAgent/core/planner/state.py)
+- `PlannerState` (TypedDict for LangGraph): request, constraints, retrieved_hits, itinerary, violations, audit_trail, step_count, total_tokens, total_cost, replan_count, status, which_limit
+
+##### [NEW] [core/planner/graph.py](file:///d:/Github_Clones/TripAgent/core/planner/graph.py)
+LangGraph `StateGraph` with nodes:
+1. `parse_constraints` — extracts constraints from request text (stub: returns fixed constraints)
+2. `retrieve` — **stubbed**, returns retrieval-core `ScoredHit` list (shape wired, data fake)
+3. `draft_itinerary` — stub: builds a fixed 3-step itinerary
+4. `validate` — **placeholder returning empty violations list** (filled in Phase 2)
+5. `replan` — re-drafts with violations in context
+6. `finalise` — packages `PlanResult`
+
+Conditional edges:
+- After every node: check circuit breakers → if tripped, go to `abort` node
+- After `validate`: if violations and replan_count < max_replans → `replan`; elif violations → `finalise` as infeasible; else → `finalise` as finalised
+- Write tools emit `PendingAction` and halt the branch
+
+##### [NEW] [core/planner/abort.py](file:///d:/Github_Clones/TripAgent/core/planner/abort.py)
+- `abort` node: packages `PlanResult(status="aborted", which_limit=..., itinerary=partial, audit_trail=trail)`
+
+---
+
+#### Adapter Stub — `adapters/wikivoyage.py`
+
+##### [NEW] [adapters/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/adapters/__init__.py)
+
+##### [NEW] [adapters/wikivoyage.py](file:///d:/Github_Clones/TripAgent/adapters/wikivoyage.py)
+- Implements retrieval-core's `CorpusAdapter` **structurally** (no inheritance)
+- Signature is final; returns stub data today
+- **Depends on Q1 resolution** — if `CorpusAdapter` still requires `get_product() -> Product`, this won't type-check for `Venue`
+
+---
+
+#### App Layer (minimal)
+
+##### [NEW] [app/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/app/__init__.py)
+
+##### [NEW] [app/settings.py](file:///d:/Github_Clones/TripAgent/app/settings.py)
+- `Settings` class — the **only** place that reads `os.environ`
+- Fields: `allowed_origins`, `max_steps`, `max_tokens_per_task`, `max_cost_per_task`, `max_replans`
+
+##### [NEW] [app/main.py](file:///d:/Github_Clones/TripAgent/app/main.py)
+- FastAPI app with CORS (explicit allow_origins from Settings)
+- `GET /healthz` — no DB access
+- `GET /runs/{run_id}/audit` — returns audit trail JSON
+
+---
+
+#### Tests (Phase 1)
+
+##### [NEW] [tests/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/tests/__init__.py)
+
+##### [NEW] [tests/test_tool_registry.py](file:///d:/Github_Clones/TripAgent/tests/test_tool_registry.py)
+- Write tool without idempotency_key → registration fails
+- Write tool with idempotency_key → registration succeeds
+- Read tool registers without idempotency_key
+
+##### [NEW] [tests/test_circuit_breakers.py](file:///d:/Github_Clones/TripAgent/tests/test_circuit_breakers.py)
+- Run with `max_steps=3` → aborts cleanly, audit trail has exactly 3 step records, `which_limit="max_steps"`
+- Token limit breach → aborts with `which_limit="max_tokens"`
+- Cost limit breach → aborts with `which_limit="max_cost"`
+
+##### [NEW] [tests/test_graph_e2e.py](file:///d:/Github_Clones/TripAgent/tests/test_graph_e2e.py)
+- Graph runs end-to-end on stubs → produces `PlanResult` with audit trail
+- Every audit column is populated, including `source_version`
+
+##### [NEW] [tests/test_adapter_protocol.py](file:///d:/Github_Clones/TripAgent/tests/test_adapter_protocol.py)
+- Stub wikivoyage adapter that inherits from nothing type-checks as retrieval-core's `CorpusAdapter`
+
+---
+
+### Phase 2 — T1: Four Deterministic Validators + Replan Loop
+
+---
+
+#### Validators — `core/validators/`
+
+##### [NEW] [core/validators/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/core/validators/__init__.py)
+- `Validator` Protocol: `check(itinerary: Itinerary) -> list[Violation]`
+
+##### [NEW] [core/validators/connectivity.py](file:///d:/Github_Clones/TripAgent/core/validators/connectivity.py)
+- Checks every transit leg references a **real GTFS trip_id** via exact primary-key lookup
+- Departure time must be ≥ previous activity end + `min_transfer_buffer` (default 10 min)
+- **No LLM, no retrieval-core imports, no fuzzy matching** — pure dict/table lookup + arithmetic
+- Data source: injected lookup table (dict mapping trip_id → trip metadata)
+
+##### [NEW] [core/validators/opening_hours.py](file:///d:/Github_Clones/TripAgent/core/validators/opening_hours.py)
+- Every visit falls inside the venue's opening hours for that weekday
+- Honours closure days
+- Data source: injected lookup table (dict mapping venue_id → opening hours by weekday)
+
+##### [NEW] [core/validators/geography.py](file:///d:/Github_Clones/TripAgent/core/validators/geography.py)
+- Walking/transit time between consecutive activities is physically achievable
+- Uses **real coordinates** + configurable `walk_speed_kmh` (default 4.5)
+- Haversine distance → minimum time → compare against gap between consecutive steps
+- Also catches: overlapping activities at different locations
+
+##### [NEW] [core/validators/budget.py](file:///d:/Github_Clones/TripAgent/core/validators/budget.py)
+- Running total stays within budget
+- Checks **per-category** and **overall** independently
+- Steps with `cost=None` (missing price data) are excluded from budget check (documented as known limitation)
+
+---
+
+#### Graph Update — Replan Loop
+
+##### [MODIFY] [graph.py](file:///d:/Github_Clones/TripAgent/core/planner/graph.py)
+- Fill in `validate` node: runs all four validators, collects violations
+- On violations: routes to `replan` with violations injected into planner context
+- `replan` count tracked; after `max_replans` (default 3): finalise with `status="infeasible"`, return unresolved violations **verbatim**
+- Every validator failure recorded in audit trail's `validator_failures` field
+
+---
+
+#### Must-Fail Test Fixtures
+
+##### [NEW] [tests/fixtures/must_fail/01_nonexistent_trip.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/01_nonexistent_trip.json)
+Itinerary with a `trip_id` not in GTFS. Expected: `connectivity` violation.
+
+##### [NEW] [tests/fixtures/must_fail/02_closure_day_visit.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/02_closure_day_visit.json)
+Museum visit on Monday (closed). Expected: `opening_hours` violation.
+
+##### [NEW] [tests/fixtures/must_fail/03_impossible_transfer.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/03_impossible_transfer.json)
+Two points 15km apart with 5-minute gap. Expected: `geography` violation.
+
+##### [NEW] [tests/fixtures/must_fail/04_over_budget.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/04_over_budget.json)
+Total cost exceeds budget by 200 EUR. Expected: `budget` violation.
+
+##### [NEW] [tests/fixtures/must_fail/05_midnight_crossing.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/05_midnight_crossing.json)
+Transit leg departing 23:50 arriving 00:30 next day, but itinerary day boundary doesn't account for it. Expected: `connectivity` violation.
+
+##### [NEW] [tests/fixtures/must_fail/06_no_route_border.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/06_no_route_border.json)
+Route to a city outside the 5-city scope — no GTFS trip exists. Expected: `connectivity` violation.
+
+##### [NEW] [tests/fixtures/must_fail/07_arrives_5min_late.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/07_arrives_5min_late.json)
+Arrives at venue at 18:05, venue closes at 18:00. Expected: `opening_hours` violation.
+
+##### [NEW] [tests/fixtures/must_fail/08_insufficient_buffer.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/08_insufficient_buffer.json)
+Previous activity ends at 14:55, transit departs at 14:58 — less than 10-min transfer buffer. Expected: `connectivity` violation.
+
+##### [NEW] [tests/fixtures/must_fail/09_category_over_budget.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/09_category_over_budget.json)
+Single category (accommodation) exceeds its budget allocation, but overall total is fine. Expected: `budget` violation.
+
+##### [NEW] [tests/fixtures/must_fail/10_overlapping_activities.json](file:///d:/Github_Clones/TripAgent/tests/fixtures/must_fail/10_overlapping_activities.json)
+Two different venues at the same time slot. Expected: `geography` violation.
+
+---
+
+#### Tests (Phase 2)
+
+##### [NEW] [tests/test_validators.py](file:///d:/Github_Clones/TripAgent/tests/test_validators.py)
+- Parametrized test loads all 10 `must_fail/*.json` fixtures
+- Each asserts at least one violation from the **expected** validator (not just any violation)
+- Asserts violation contains: validator name, step_index, explanation
+
+##### [NEW] [tests/test_replan_loop.py](file:///d:/Github_Clones/TripAgent/tests/test_replan_loop.py)
+- Run with persistent violations → after 3 replans, finalises as `infeasible` with violations intact
+- Violations are never silently dropped
+
+##### [NEW] [tests/test_validators_no_llm.py](file:///d:/Github_Clones/TripAgent/tests/test_validators_no_llm.py)
+- `grep`-style assertion: no imports of `retrieval_core`, no provider imports, no LLM calls in `core/validators/`
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+# Phase 1 acceptance
+uv run ruff check .
+uv run mypy core/ app/ adapters/ tests/
+uv run pytest tests/test_tool_registry.py tests/test_circuit_breakers.py tests/test_graph_e2e.py tests/test_adapter_protocol.py -v
+
+# Phase 2 acceptance
+uv run pytest tests/test_validators.py tests/test_replan_loop.py tests/test_validators_no_llm.py -v
+
+# Full suite
+uv run pytest -v
+```
+
+### Grep Verifications
+```bash
+# No locally redefined Query / ScoredHit / SearchResponse
+grep -rn "class Query\|class ScoredHit\|class SearchResponse" core/ adapters/
+
+# No BM25, dense, fusion, or rerank in this repo
+grep -rn "bm25\|dense_retriev\|fusion\|rerank" core/ adapters/
+
+# No LLM/provider/retrieval-core imports in validators
+grep -rn "import.*provider\|import.*retrieval_core\|import.*openai\|import.*anthropic\|import.*langchain" core/validators/
+
+# No os.environ outside app/settings.py
+grep -rn "os.environ\|os.getenv\|load_dotenv" core/ adapters/ tests/
+```
+
+### Manual Verification
+1. Run graph with `max_steps=3` → confirm graceful abort with 3-step audit trail
+2. Export audit trail via `to_markdown()` → visually confirm it's README-ready
+3. Run all 10 must-fail fixtures → confirm each names the correct validator
+4. Trigger 3 replan rounds → confirm `infeasible` terminal status with intact violations
+
+---
+
+## Execution Order
+
+```mermaid
+graph TD
+    A["0. Resolve Q1: retrieval-core mismatch"] --> B["1. pyproject.toml + project scaffold"]
+    B --> C["2. core/models.py — all domain types"]
+    C --> D["3. core/tools/base.py — Tool protocol + registry"]
+    D --> E["4. core/tools/*.py — 8 stub tools"]
+    E --> F["5. core/audit.py — AuditRecord + AuditTrail"]
+    F --> G["6. core/planner/limits.py — circuit breakers"]
+    G --> H["7. core/planner/graph.py — state machine skeleton"]
+    H --> I["8. adapters/wikivoyage.py — stub adapter"]
+    I --> J["9. app/settings.py + app/main.py — minimal API"]
+    J --> K["10. Phase 1 tests — run & verify"]
+    K --> L["11. core/validators/*.py — four validators"]
+    L --> M["12. tests/fixtures/must_fail/*.json — 10 cases"]
+    M --> N["13. Wire validators into graph.py replan loop"]
+    N --> O["14. Phase 2 tests — run & verify"]
+    O --> P["15. Full acceptance pass"]
+```
+
+> [!NOTE]
+> **Step 0 is blocking.** The retrieval-core `Product`/`CorpusAdapter` mismatch must be resolved before any code is written, because it determines whether `Venue` is a local type or an extension of a generalized retrieval-core `Document`.

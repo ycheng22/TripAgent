@@ -1,0 +1,51 @@
+{
+  "itinerary_id": "itin-3",
+  "steps": [
+    {
+      "step_index": 1,
+      "day": 1,
+      "kind": "visit",
+      "starts_at": "2024-06-01T10:00:00",
+      "ends_at": "2024-06-01T12:00:00",
+      "venue": {
+        "venue_id": "A",
+        "name": "A",
+        "city": "Berlin",
+        "coord": {
+          "lat": 52.52,
+          "lon": 13.4
+        },
+        "source_id": "s1",
+        "source_version": "1"
+      },
+      "leg": null,
+      "cost": null,
+      "source_id": "s",
+      "source_version": "1"
+    },
+    {
+      "step_index": 2,
+      "day": 1,
+      "kind": "visit",
+      "starts_at": "2024-06-01T12:00:00",
+      "ends_at": "2024-06-01T14:00:00",
+      "venue": {
+        "venue_id": "LON",
+        "name": "London Eye",
+        "city": "London",
+        "coord": {
+          "lat": 51.5,
+          "lon": -0.1
+        },
+        "source_id": "s",
+        "source_version": "1"
+      },
+      "leg": null,
+      "cost": null,
+      "source_id": "s",
+      "source_version": "1"
+    }
+  ],
+  "total_cost": 0.0,
+  "currency": "EUR"
+}

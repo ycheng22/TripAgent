@@ -1,0 +1,175 @@
+# Day 3 · P2 地基：Tool Layer, State Machine, Circuit Breakers, Audit Trail, Four Validators
+
+Build the foundational runtime for TripAgent: tool protocols, LangGraph planner skeleton, triple circuit breakers, audit trail, and four deterministic validators with replan loop. All data sources are stubbed. This is milestones T0 + T1 from SPEC §11.
+
+---
+
+## Decisions Recorded
+
+- **retrieval-core Type Mismatch (Q1)**: Option 2 selected. We will add a parallel `Document` model to `retrieval-core` alongside `Product` to minimize disruption to ShopRank. A prompt to execute this update on `retrieval-core` is provided.
+- **LangGraph Version (Q2)**: We will create a local virtual environment with `uv` and install `langgraph` without pinning a specific strict version.
+- **Must-Fail Fixtures (Q3)**: I will produce a draft set of the 10 `must-fail` JSON fixtures for your review during execution.
+- **Visa Check (Q4)**: Modeled as a **connectivity** failure ("no transit leg exists between Prague and a non-Schengen city").
+- **Overlapping Activities (Q5)**: Modeled as a **geography** failure ("zero travel time between two distinct coordinates at overlapping times is physically impossible").
+
+---
+
+## Proposed Changes
+
+The implementation is split into two phases matching the two AI prompts. **Phase 1 (T0)** builds the skeleton with stub data; **Phase 2 (T1)** fills in validators and the replan loop.
+
+### Phase 1 — T0: Tool Layer, State Machine, Circuit Breakers, Audit Trail
+
+---
+
+#### Project Setup
+
+##### [NEW] [pyproject.toml](file:///d:/Github_Clones/TripAgent/pyproject.toml)
+- Python 3.12, hatchling build
+- Dependencies: `pydantic>=2.0`, `fastapi`, `uvicorn`, `langgraph`
+- retrieval-core as editable local path for dev. **Note: requires running the `retrieval-core` update prompt first to add `Document` models.**
+- Dev deps: `pytest`, `pytest-asyncio`, `mypy`, `ruff`, `httpx`
+
+##### [NEW] [.env.example](file:///d:/Github_Clones/TripAgent/.env.example)
+- `ALLOWED_ORIGINS`, `MAX_STEPS`, `MAX_TOKENS_PER_TASK`, `MAX_COST_PER_TASK`, `MAX_REPLANS`
+
+---
+
+#### Domain Models — `core/models.py`
+
+##### [NEW] [core/models.py](file:///d:/Github_Clones/TripAgent/core/models.py)
+All Pydantic v2 models from SPEC §3.2:
+- `Coordinate`, `Constraint`, `TripRequest`
+- `Venue` — Maps to/from retrieval-core's new `Document` model. Contains: `venue_id`, `name`, `city`, `coord`, `source_id`, `source_version`
+- `TransitLeg`, `ItineraryStep`, `Itinerary`
+- `Violation` (validator name, severity, step_index, explanation, breached_constraint)
+- `PendingAction` (action_id, tool_name, args, idempotency_key, status, result)
+- `PlanResult` (status: finalised|infeasible|aborted, itinerary, violations, which_limit, audit_trail)
+- `OpeningHours`, `Price`, `HoldResult`, `BookingResult`, `SendResult` — tool return types
+
+---
+
+#### Tool Layer — `core/tools/`
+
+##### [NEW] [core/tools/\_\_init\_\_.py](file:///d:/Github_Clones/TripAgent/core/tools/__init__.py)
+
+##### [NEW] [core/tools/base.py](file:///d:/Github_Clones/TripAgent/core/tools/base.py)
+- `Tool` Protocol: `name: str`, `description: str`, `args_model: type[BaseModel]`, `access: Literal["read", "write"]`, `execute(args) -> BaseModel`
+- For write tools: `idempotency_key(args) -> str`
+- `ToolRegistry` class:
+  - `register(tool)` — refuses write tools lacking `idempotency_key` (raises `ValueError`)
+
+##### [NEW] [core/tools/*.py] (8 stub tools)
+- `search_attractions.py` (read) — Stub returns fake venues with `source_id` & `source_version`.
+- `get_opening_hours.py` (read)
+- `find_transit_trips.py` (read)
+- `estimate_walk_time.py` (read) — Haversine distance based on coordinates.
+- `lookup_price.py` (read) — Missing items return `None`.
+- `hold_reservation.py` (write) — Idempotency: `{itinerary_id}:{step_index}:{resource_id}`
+- `book_transit.py` (write) — Idempotency: `{itinerary_id}:{step_index}:{trip_id}`
+- `send_confirmation.py` (write) — Idempotency: `{itinerary_id}:{channel}:{sha256(recipient)}`
+
+---
+
+#### Circuit Breakers — `core/planner/limits.py`
+
+##### [NEW] [core/planner/limits.py](file:///d:/Github_Clones/TripAgent/core/planner/limits.py)
+- `LimitConfig`: `max_steps=25`, `max_tokens_per_task=60000`, `max_cost_per_task=0.05`
+- `CircuitBreakers.check(state)` — Checked on **every graph transition**. Returns `LimitBreached` instead of throwing an exception.
+
+---
+
+#### Audit Trail — `core/audit.py`
+
+##### [NEW] [core/audit.py](file:///d:/Github_Clones/TripAgent/core/audit.py)
+- `AuditRecord` (Pydantic v2): exactly 11 fields.
+- `AuditTrail`: `append(record)`, `to_markdown()`, `to_json()`.
+
+---
+
+#### State Machine — `core/planner/graph.py`
+
+##### [NEW] [core/planner/state.py](file:///d:/Github_Clones/TripAgent/core/planner/state.py)
+- `PlannerState` (TypedDict)
+
+##### [NEW] [core/planner/graph.py](file:///d:/Github_Clones/TripAgent/core/planner/graph.py)
+LangGraph `StateGraph` with nodes: `parse_constraints`, `retrieve` (stubbed), `draft_itinerary` (stubbed), `validate` (placeholder), `replan`, `finalise`. Plus `abort` node for circuit breakers.
+
+---
+
+#### Adapter Stub — `adapters/wikivoyage.py`
+
+##### [NEW] [adapters/wikivoyage.py](file:///d:/Github_Clones/TripAgent/adapters/wikivoyage.py)
+- Implements retrieval-core's new `DocumentAdapter` protocol **structurally** (no inheritance). Returns fake Document mapping to Venue.
+
+---
+
+#### App Layer & Phase 1 Tests
+
+- `app/settings.py` (only `os.environ` read), `app/main.py`
+- Tests: `test_tool_registry.py`, `test_circuit_breakers.py`, `test_graph_e2e.py`, `test_adapter_protocol.py`
+
+---
+
+### Phase 2 — T1: Four Deterministic Validators + Replan Loop
+
+---
+
+#### Validators — `core/validators/`
+
+##### [NEW] [core/validators/connectivity.py](file:///d:/Github_Clones/TripAgent/core/validators/connectivity.py)
+- Exact lookup against GTFS `trip_id`. Checks `min_transfer_buffer`. Handles visa/border failures as missing route.
+
+##### [NEW] [core/validators/opening_hours.py](file:///d:/Github_Clones/TripAgent/core/validators/opening_hours.py)
+- Validates against venue hours and closure days.
+
+##### [NEW] [core/validators/geography.py](file:///d:/Github_Clones/TripAgent/core/validators/geography.py)
+- Validates physical travel time via coordinates. Handles overlapping activities.
+
+##### [NEW] [core/validators/budget.py](file:///d:/Github_Clones/TripAgent/core/validators/budget.py)
+- Validates category and overall budget.
+
+---
+
+#### Must-Fail Test Fixtures
+
+##### [NEW] [tests/fixtures/must_fail/*.json] (10 files)
+Will draft 10 JSON fixtures based on the SPEC list (nonexistent trip, closure day, impossible transfer, etc.) for review.
+
+---
+
+#### Tests (Phase 2)
+- `test_validators.py`, `test_replan_loop.py`, `test_validators_no_llm.py`
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+uv run ruff check .
+uv run mypy core/ app/ adapters/ tests/
+uv run pytest -v
+```
+
+### Manual Verification
+1. Run graph with `max_steps=3` → confirm graceful abort with 3-step audit trail
+2. Export audit trail via `to_markdown()` → visually confirm it's README-ready
+3. Run all 10 must-fail fixtures → confirm each names the correct validator
+
+---
+
+## Execution Order
+
+```mermaid
+graph TD
+    A["0. Update retrieval-core (via separate prompt)"] --> B["1. uv venv & install langgraph"]
+    B --> C["2. core/models.py & Tool Layer"]
+    C --> D["3. Audit Trail & Circuit Breakers"]
+    D --> E["4. LangGraph skeleton & stub adapters"]
+    E --> F["5. App & Phase 1 Tests"]
+    F --> G["6. Draft 10 Must-Fail Fixtures for review"]
+    G --> H["7. core/validators/*.py (Four validators)"]
+    H --> I["8. Wire validators into graph.py replan loop"]
+    I --> J["9. Phase 2 Tests & Final Verification"]
+```

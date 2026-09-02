@@ -1,0 +1,27 @@
+{
+  "itinerary_id": "itin-9",
+  "steps": [
+    {
+      "step_index": 1,
+      "day": 1,
+      "kind": "transit",
+      "starts_at": "2024-06-01T10:00:00",
+      "ends_at": "2024-06-01T12:00:00",
+      "venue": null,
+      "leg": {
+        "trip_id": "1",
+        "from_stop": "A",
+        "to_stop": "B",
+        "depart_at": "2024-06-01T10:00:00",
+        "arrive_at": "2024-06-01T12:00:00",
+        "feed_version": "1",
+        "mode": "train"
+      },
+      "cost": 1500.0,
+      "source_id": "s",
+      "source_version": "1"
+    }
+  ],
+  "total_cost": 100.0,
+  "currency": "EUR"
+}
