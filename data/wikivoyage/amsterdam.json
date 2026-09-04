@@ -1,0 +1,53 @@
+[
+  {
+    "venue_id": "ams-rijksmuseum",
+    "name": "Rijksmuseum",
+    "city": "Amsterdam",
+    "coord": {"lat": 52.3600, "lon": 4.8852},
+    "description": "The Rijksmuseum is a Dutch national museum dedicated to arts and history in Amsterdam. Opening hours: 09:00 - 17:00 daily. Admission: €22.50.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "17:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 22.50, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_amsterdam",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "ams-vangogh",
+    "name": "Van Gogh Museum",
+    "city": "Amsterdam",
+    "coord": {"lat": 52.3581, "lon": 4.8810},
+    "description": "Museum housing the world's largest collection of Van Gogh paintings. Opening hours: 09:00 - 18:00 daily. Admission: €22.00.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "18:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 22.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_amsterdam",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "ams-annefrank",
+    "name": "Anne Frank House",
+    "city": "Amsterdam",
+    "coord": {"lat": 52.3752, "lon": 4.8840},
+    "description": "Writer's house and biographical museum dedicated to Jewish wartime diarist Anne Frank. Open 09:00 - 22:00 daily. Admission: €16.00.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "22:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 16.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_amsterdam",
+    "source_version": "2024-06-curated"
+  }
+]

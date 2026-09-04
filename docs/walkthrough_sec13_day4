@@ -1,0 +1,33 @@
+# Walkthrough: Day 4 Implementation (End-to-End & Security)
+
+## Overview
+I have successfully implemented the requirements for Day 4. The `TripAgent` backend is now wired up with a complete End-to-End pipeline featuring robust injection defenses, deterministic validators, and a state machine-driven approval queue. Additionally, an Angular UI has been generated to consume the Server-Sent Events (SSE) streaming API.
+
+## 1. Security Layer & Injection Defense
+* **Data Isolation**: Implemented `format_for_context` in `core/untrusted.py` to wrap retrieved content in strict `<DATA>` blocks.
+* **Audit Heuristics**: Created `detect_injection_signals` to flag suspicious strings (e.g., "ignore previous instructions") directly in retrieved data.
+* **Tests**: Written 10 injection attack fixtures and 1 benign control. All scenarios pass in `tests/test_injection.py`.
+
+## 2. Approval Queue & State Machine
+* **Idempotent Writes**: Write tools (like `book_transit`) are submitted to the `ApprovalQueue` with a deterministic idempotency key (`trip_id + step_index`).
+* **Execution Gates**: The `execute_writes` node in `graph.py` pauses execution (`awaiting_approval`) until the user approves or rejects via the `/approvals` endpoints.
+* **Tests**: Verified logic with `tests/test_approval.py`.
+
+## 3. End-to-End Pipeline & SSE Streaming
+* **Graph Wiring**: Configured `core/planner/graph.py` to route state through constraints parsing, retrieval, drafting, validation, and write execution.
+* **SSE Emission**: The state machine now accumulates `SSEEvent` objects, which are streamed back to the client via `POST /plan`.
+* **Tests**: Verified SSE formatting with `tests/test_sse.py`.
+
+## 4. Angular UI
+* **Scaffolding**: Generated a minimal Angular 18 application in the `web/` directory.
+* **Timeline Component**: Created a real-time timeline to parse and display Server-Sent Events (e.g., drafting progress, constraint violations).
+* **Approval Service**: Wired buttons to interact with the backend `/approvals` API.
+
+## 5. Documentation
+* **`docs/DECISIONS.md`**: Updated with Day 3 and Day 4 architectural choices.
+* **`docs/FAILURE-MODES.md`**: Logged the 15 tested failure scenarios (injection attacks and validator violations).
+
+## Next Steps
+The backend and frontend are ready. To test the UI locally:
+1. Run the FastAPI backend: `uv run uvicorn app.main:app --reload`
+2. Start the Angular frontend: `cd web && npm start`

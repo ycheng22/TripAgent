@@ -1,0 +1,79 @@
+[
+  {
+    "trip_id": "IC-141",
+    "from_stop": "AMS-CS",
+    "to_stop": "BER-HBF",
+    "depart_at": "09:00:00",
+    "arrive_at": "15:15:00",
+    "feed_version": "2024-DB",
+    "mode": "train",
+    "price": 69.90,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "ICE-271",
+    "from_stop": "BER-HBF",
+    "to_stop": "PRG-HLN",
+    "depart_at": "10:00:00",
+    "arrive_at": "14:30:00",
+    "feed_version": "2024-DB",
+    "mode": "train",
+    "price": 39.90,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "RJ-71",
+    "from_stop": "PRG-HLN",
+    "to_stop": "VIE-HBF",
+    "depart_at": "12:30:00",
+    "arrive_at": "16:45:00",
+    "feed_version": "2024-OBB",
+    "mode": "train",
+    "price": 29.00,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "NJ-402",
+    "from_stop": "VIE-HBF",
+    "to_stop": "PAR-GDN",
+    "depart_at": "19:40:00",
+    "arrive_at": "10:00:00",
+    "feed_version": "2024-OBB",
+    "mode": "train",
+    "price": 149.00,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "THA-9321",
+    "from_stop": "PAR-GDN",
+    "to_stop": "AMS-CS",
+    "depart_at": "08:25:00",
+    "arrive_at": "11:45:00",
+    "feed_version": "2024-SNCF",
+    "mode": "train",
+    "price": 89.00,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "BUS-99",
+    "from_stop": "BER-HBF",
+    "to_stop": "PRG-HLN",
+    "depart_at": "08:00:00",
+    "arrive_at": "12:30:00",
+    "feed_version": "2024-FLIX",
+    "mode": "coach",
+    "price": 19.99,
+    "currency": "EUR"
+  },
+  {
+    "trip_id": "LOC-AMS-01",
+    "from_stop": "AMS-CS",
+    "to_stop": "ams-rijksmuseum",
+    "depart_at": "09:30:00",
+    "arrive_at": "09:45:00",
+    "feed_version": "2024-GVB",
+    "mode": "tram",
+    "price": 3.20,
+    "currency": "EUR"
+  }
+]

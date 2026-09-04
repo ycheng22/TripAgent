@@ -1,0 +1,43 @@
+<div class="timeline">
+  <div class="timeline-event" *ngFor="let ev of events">
+    <div class="event-header">
+      <span class="event-type">{{ ev.event_type }}</span>
+      <span class="timestamp">{{ ev.timestamp | date:'mediumTime' }}</span>
+    </div>
+    
+    <div class="event-body" [ngSwitch]="ev.event_type">
+      <div *ngSwitchCase="'constraints_parsed'">
+        Parsed {{ ev.payload.constraints.length }} constraints.
+      </div>
+      <div *ngSwitchCase="'drafting'">
+        Generated draft with {{ ev.payload.itinerary?.steps?.length || 0 }} steps.
+      </div>
+      <div *ngSwitchCase="'violation_found'">
+        <div class="violation" *ngFor="let v of ev.payload.violations">
+          Validator <b>{{ v.validator }}</b> found violation: {{ v.explanation }}
+        </div>
+      </div>
+      <div *ngSwitchCase="'awaiting_approval'">
+        <h4>Action Requires Approval</h4>
+        <div class="pending-action" *ngFor="let p of ev.payload.pending_actions">
+          <p>Tool: {{ p.tool_name }}</p>
+          <button (click)="approveAction(p.action_id)">Approve</button>
+          <button (click)="rejectAction(p.action_id)">Reject</button>
+        </div>
+      </div>
+      <div *ngSwitchCase="'infeasible'">
+        <h4 style="color: red">Plan is Infeasible</h4>
+      </div>
+      <div *ngSwitchCase="'aborted'">
+        <h4 style="color: red">Run Aborted: Limit reached</h4>
+      </div>
+      <div *ngSwitchCase="'finalised'">
+        <h4 style="color: green">Plan Finalised</h4>
+        <p>Total cost: {{ ev.payload.plan_result?.itinerary?.total_cost | currency:'EUR' }}</p>
+      </div>
+      <div *ngSwitchDefault>
+        <pre>{{ ev.payload | json }}</pre>
+      </div>
+    </div>
+  </div>
+</div>

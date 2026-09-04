@@ -1,18 +1,35 @@
+import json
+from pathlib import Path
 from retrieval_core.models import Document
 
 class WikivoyageAdapter:
+    def __init__(self, data_dir: Path = Path("data/wikivoyage")):
+        self.data_dir = data_dir
+        self.venues = {}
+        if self.data_dir.exists():
+            for file_path in self.data_dir.glob("*.json"):
+                try:
+                    data = json.loads(file_path.read_text(encoding="utf-8"))
+                    for venue in data:
+                        self.venues[venue["venue_id"]] = venue
+                except Exception:
+                    pass
+
     async def get_document(self, doc_id: str) -> Document | None:
-        # Stub
-        if "stub" in doc_id:
+        if doc_id in self.venues:
+            v = self.venues[doc_id]
             return Document(
                 doc_id=doc_id,
                 metadata={
-                    "name": "Stub Venue",
-                    "city": "Berlin",
-                    "lat": 52.52,
-                    "lon": 13.40,
-                    "source_id": "wikivoyage",
-                    "source_version": "2024-01-stub"
+                    "name": v["name"],
+                    "city": v["city"],
+                    "lat": v["coord"]["lat"],
+                    "lon": v["coord"]["lon"],
+                    "source_id": v["source_id"],
+                    "source_version": v["source_version"],
+                    "description": v["description"],
+                    "opening_hours": v["opening_hours"],
+                    "prices": v["prices"]
                 }
             )
         return None

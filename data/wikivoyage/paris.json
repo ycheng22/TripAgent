@@ -1,0 +1,53 @@
+[
+  {
+    "venue_id": "par-eiffel",
+    "name": "Eiffel Tower",
+    "city": "Paris",
+    "coord": {"lat": 48.8584, "lon": 2.2945},
+    "description": "Wrought-iron lattice tower on the Champ de Mars. Open 09:30 - 22:45 daily. Admission to top: €29.40.",
+    "opening_hours": {
+      "open_time": "09:30:00",
+      "close_time": "22:45:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 29.40, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_paris",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "par-louvre",
+    "name": "Louvre Museum",
+    "city": "Paris",
+    "coord": {"lat": 48.8606, "lon": 2.3376},
+    "description": "World's most-visited museum, home to the Mona Lisa. Open 09:00 - 18:00. Closed Tuesdays.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "18:00:00",
+      "closure_days": [1] 
+    },
+    "prices": [
+      {"category": "adult", "amount": 22.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_paris",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "par-orsay",
+    "name": "Musée d'Orsay",
+    "city": "Paris",
+    "coord": {"lat": 48.8600, "lon": 2.3266},
+    "description": "Museum holding mainly French art dating from 1848 to 1914. Open 09:30 - 18:00. Closed Mondays.",
+    "opening_hours": {
+      "open_time": "09:30:00",
+      "close_time": "18:00:00",
+      "closure_days": [0]
+    },
+    "prices": [
+      {"category": "adult", "amount": 16.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_paris",
+    "source_version": "2024-06-curated"
+  }
+]

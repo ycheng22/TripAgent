@@ -1,0 +1,36 @@
+[
+  {
+    "venue_id": "vie-belvedere",
+    "name": "Belvedere Palace",
+    "city": "Vienna",
+    "coord": {"lat": 48.1915, "lon": 16.3809},
+    "description": "Historic building complex in Vienna consisting of two Baroque palaces. Open 09:00 - 18:00 daily. Admission: €17.50.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "18:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 17.50, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_vienna",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "vie-schonbrunn",
+    "name": "Schönbrunn Palace",
+    "city": "Vienna",
+    "coord": {"lat": 48.1849, "lon": 16.3122},
+    "description": "Main summer residence of the Habsburg rulers. Open 08:30 - 17:30 daily. Admission: €29.00.",
+    "opening_hours": {
+      "open_time": "08:30:00",
+      "close_time": "17:30:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 29.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_vienna",
+    "source_version": "2024-06-curated"
+  }
+]

@@ -1,5 +1,5 @@
 from typing import TypedDict, Any
-from core.models import TripRequest, Constraint, Itinerary, Violation, PlanResult
+from core.models import TripRequest, Constraint, Itinerary, Violation, PlanResult, PendingAction
 from core.audit import AuditTrail
 from retrieval_core.models import ScoredHit
 
@@ -17,3 +17,6 @@ class PlannerState(TypedDict):
     status: str
     which_limit: str | None
     plan_result: PlanResult | None
+    pending_actions: list[PendingAction]
+    sse_events: list[dict]
+

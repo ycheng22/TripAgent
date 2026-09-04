@@ -1,0 +1,53 @@
+[
+  {
+    "venue_id": "prg-praguecastle",
+    "name": "Prague Castle",
+    "city": "Prague",
+    "coord": {"lat": 50.0903, "lon": 14.4010},
+    "description": "Prague Castle is a castle complex in Prague, Czech Republic. Opening hours: 06:00 - 22:00 daily (complex), historical buildings 09:00 - 17:00. Admission: 450 CZK (approx €18).",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "17:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 18.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_prague",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "prg-charlesbridge",
+    "name": "Charles Bridge",
+    "city": "Prague",
+    "coord": {"lat": 50.0865, "lon": 14.4114},
+    "description": "Historic bridge that crosses the Vltava river. Always open. Free admission.",
+    "opening_hours": {
+      "open_time": "00:00:00",
+      "close_time": "23:59:59",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 0.0, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_prague",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "prg-orloj",
+    "name": "Prague Astronomical Clock",
+    "city": "Prague",
+    "coord": {"lat": 50.0870, "lon": 14.4207},
+    "description": "Medieval astronomical clock attached to the Old Town Hall. Shows every hour. Admission to tower: 300 CZK (approx €12). Open 11:00-19:00 Monday, 09:00-19:00 Tue-Sun.",
+    "opening_hours": {
+      "open_time": "09:00:00",
+      "close_time": "19:00:00",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 12.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_prague",
+    "source_version": "2024-06-curated"
+  }
+]

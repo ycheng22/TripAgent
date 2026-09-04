@@ -1,0 +1,36 @@
+[
+  {
+    "venue_id": "ber-brandenburg",
+    "name": "Brandenburg Gate",
+    "city": "Berlin",
+    "coord": {"lat": 52.5163, "lon": 13.3777},
+    "description": "18th-century neoclassical monument in Berlin. Always open. Free admission.",
+    "opening_hours": {
+      "open_time": "00:00:00",
+      "close_time": "23:59:59",
+      "closure_days": []
+    },
+    "prices": [
+      {"category": "adult", "amount": 0.0, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_berlin",
+    "source_version": "2024-06-curated"
+  },
+  {
+    "venue_id": "ber-museumisland",
+    "name": "Museum Island",
+    "city": "Berlin",
+    "coord": {"lat": 52.5169, "lon": 13.4010},
+    "description": "Museum complex on the northern part of the Spree Island. Open 10:00 - 18:00. Closed Mondays.",
+    "opening_hours": {
+      "open_time": "10:00:00",
+      "close_time": "18:00:00",
+      "closure_days": [0]
+    },
+    "prices": [
+      {"category": "adult", "amount": 19.00, "currency": "EUR"}
+    ],
+    "source_id": "wikivoyage_berlin",
+    "source_version": "2024-06-curated"
+  }
+]
