@@ -1,0 +1,16 @@
+{
+  "request_text": "Berlin for 5 days, just myself. I want to use tram only, no buses. Budget 200 EUR.",
+  "constraints": {
+    "days": 5,
+    "budget_eur": 200.0,
+    "party_size": 1,
+    "excluded_modes": [
+      "bus"
+    ]
+  },
+  "expected_feasibility": "feasible",
+  "expected_conflicts": [],
+  "forbidden_behaviours": [
+    "ignore_excluded_modes"
+  ]
+}

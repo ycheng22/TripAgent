@@ -1,0 +1,23 @@
+# Day 5 Implementation Completed
+
+The Day 5 implementation for Scenarios, Trajectory Framework, and MCP Server has been successfully completed.
+
+## Highlights of Implementation
+
+### Trajectory Evaluation Harness
+- `evals/scenario_registry.py` strictly parses hand-written scenarios and associates the snapshot with `settings.git_sha`.
+- `evals/trajectory.py` iterates over the test set, creating `TripRequest` objects, and programmatically invoking the `create_planner_graph()` to obtain raw evaluation metrics (audit trails, violations, intermediate behavior).
+- `evals/report.py` handles the markdown report generation.
+
+### MCP Server
+- `mcp_server/server.py` implements the MCP Protocol via stdio transport.
+- Read tools (`SearchAttractionsTool`, `GetOpeningHoursTool`, etc.) are mapped dynamically from their Pydantic schemas and executed locally.
+- Write tools (`BookTransitTool`, `HoldReservationTool`, etc.) are registered, but return a structured rejection message (`"Write actions require the human approval queue and are unavailable through MCP."`) when execution is attempted.
+- Documentation for Claude Desktop and Claude Code setup has been written to `docs/mcp/README.md`.
+
+### Verification Results
+- `tests/test_mcp_boundaries.py` executed successfully. This ensures that the MCP server respects the boundary correctly and safely rejects write access.
+- `evals/trajectory.py --dry-run` ran properly without exceptions, indicating that the baseline logic for parsing scenarios and evaluating paths is functional.
+
+## Ready for Your Content
+You can now continue hand-writing the 50-80 scenario JSON files into the `evals/scenarios` folder. Once you populate the data, you can trigger the evaluation framework to compute metrics.

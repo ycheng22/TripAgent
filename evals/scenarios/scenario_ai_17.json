@@ -1,0 +1,17 @@
+{
+  "request_text": "Berlin, Prague, Vienna, Paris, Amsterdam in 2 days. 5000 EUR.",
+  "constraints": {
+    "days": 2,
+    "budget_eur": 5000.0,
+    "party_size": 1,
+    "excluded_modes": []
+  },
+  "expected_feasibility": "infeasible",
+  "expected_conflicts": [
+    "geography",
+    "connectivity"
+  ],
+  "forbidden_behaviours": [
+    "ignore_travel_time"
+  ]
+}

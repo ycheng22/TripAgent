@@ -12,7 +12,8 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "langgraph>=0.2.0",
-    "retrieval-core @ git+file:///d:/Github_Clones/RetrievalCore@v0.2.0"
+    "retrieval-core @ git+file:///d:/Github_Clones/RetrievalCore@v0.2.0",
+    "mcp>=1.0.0"
 ]
 
 [project.optional-dependencies]

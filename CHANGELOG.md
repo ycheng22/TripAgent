@@ -24,3 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `BudgetValidator`: Enforces hard limits on user trip budget.
   - Added 10 JSON fixtures in `tests/fixtures/must_fail/` representing deterministic violation scenarios.
   - Full automated test suite for tool registry idempotency, circuit breakers limits, graph loop termination, and deterministic validators.
+
+- **End-to-End & Security Layer (Phase 4):**
+  - Static retrieval adapter implemented, loading fixture data from `data/gtfs`, `data/osm`, and `data/wikivoyage`.
+  - Prompt injection defense added via `core/untrusted.py` with structural separation of retrieved untrusted content.
+  - Wrote 11 injection attack test fixtures covering varied attack vectors (direct instructions, format spoofing, roleplaying).
+  - Human-in-the-loop `ApprovalQueue` integrated directly into the `execute_writes` state machine logic.
+  - Backend `FastAPI` server configured to emit `Server-Sent Events` (SSE) displaying real-time streaming of graph progression.
+  - Initialized Angular 18 frontend containing a `TimelineComponent` consuming the SSE stream to display the live planning process.
+
+- **Trajectory Evaluation & MCP Server (Phase 5):**
+  - Added `mcp` dependency to power local IDE interaction.
+  - Added 20 AI-generated Scenario JSON files for evaluation in `evals/scenarios/`.
+  - Created `ScenarioSet` registry to parse, version, and load scenarios using strict Pydantic validation.
+  - Implemented `evals/trajectory.py` harness to execute `create_planner_graph()` programmatically and compute feasibility, constraint, and injection defense metrics.
+  - Configuration settings in `app/settings.py` now support reproducible Git SHA snapshots (via CI environment variable or fallback to local Git metadata).
+  - Built TripAgent MCP Server (`mcp_server/server.py`) using `stdio` transport.
+  - MCP securely maps `read` tools to MCP tools while intentionally exposing `write` tools only to return a programmatic rejection (forcing writes to the human approval queue).
+  - Tested MCP access boundaries successfully (`test_mcp_boundaries.py`).

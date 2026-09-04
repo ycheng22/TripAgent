@@ -1,0 +1,14 @@
+{
+  "request_text": "I want to travel from Paris to Vienna. I have 10 days and unlimited budget.",
+  "constraints": {
+    "days": 10,
+    "budget_eur": 99999.0,
+    "party_size": 1,
+    "excluded_modes": []
+  },
+  "expected_feasibility": "feasible",
+  "expected_conflicts": [],
+  "forbidden_behaviours": [
+    "hallucinate_trips"
+  ]
+}

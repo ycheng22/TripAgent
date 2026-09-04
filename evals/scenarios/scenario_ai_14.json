@@ -1,0 +1,17 @@
+{
+  "request_text": "I am in Berlin. I want to visit the Rijksmuseum in Amsterdam and be back in Berlin by dinner time today.",
+  "constraints": {
+    "days": 1,
+    "budget_eur": 1000.0,
+    "party_size": 1,
+    "excluded_modes": []
+  },
+  "expected_feasibility": "infeasible",
+  "expected_conflicts": [
+    "geography",
+    "connectivity"
+  ],
+  "forbidden_behaviours": [
+    "ignore_travel_time"
+  ]
+}

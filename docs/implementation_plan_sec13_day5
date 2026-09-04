@@ -1,0 +1,84 @@
+# Day 5: Scenarios, Trajectory Framework, and MCP Server
+
+This plan outlines the architecture for the trajectory evaluation harness and the MCP server, meeting the requirements of Prompt #11 while you hand-write the scenarios.
+
+## User Review Required
+
+> [!WARNING]
+> **Dependencies:** I will add `mcp` to `pyproject.toml` to support the MCP server. I will also assume the use of `pydantic` (already installed) for the trajectory evaluation harness schema validation.
+
+> [!IMPORTANT]
+> **Storage-Agnostic Hallucination Check:** The requirement dictates checking `trip_id`, `venue`, and `price` hallucination against the source tables using "exact lookup". Since we are keeping it storage-agnostic and using the retrieval-core adapters, I will rely on the existing adapters (e.g., `static_retriever.py` / `wikivoyage.py` / `gtfs.py`) to verify existence rather than querying a database directly.
+
+## Decisions
+
+1. **Config Snapshot Generation:** We prefer a build/runtime-provided git SHA for reproducibility across environments (including Docker where `.git` is absent). The resolution order is:
+   1. `settings.git_sha` (CI-injected)
+   2. `git rev-parse HEAD`
+   3. `"unknown"`
+   The config snapshot must never fail because git metadata is unavailable.
+   
+2. **Audit Trails in Evaluation:** `trajectory.py` will invoke the planner graph programmatically (e.g., `create_planner_graph()`). We will not execute a CLI subprocess. The graph is the source of truth for evaluation because it gives direct access to the `audit_trail`, validator failures, replanning behavior, termination status, and cost metrics without needing to parse CLI output.
+
+## Proposed Changes
+
+---
+
+### Configuration & Scaffolding
+
+#### [MODIFY] [pyproject.toml](file:///D:/Github_Clones/TripAgent/pyproject.toml)
+- Add `mcp` dependency.
+
+#### [NEW] [evals/scenarios/.gitkeep](file:///D:/Github_Clones/TripAgent/evals/scenarios/.gitkeep)
+- Placeholder for your hand-written scenario JSON files.
+
+#### [NEW] [evals/models.py](file:///D:/Github_Clones/TripAgent/evals/models.py)
+- Pydantic models for scenario files (`request_text`, `constraints`, `expected_feasibility`, `expected_conflicts`, `forbidden_behaviours`).
+
+---
+
+### Trajectory Evaluation Harness
+
+#### [NEW] [evals/scenario_registry.py](file:///D:/Github_Clones/TripAgent/evals/scenario_registry.py)
+- Implements `ScenarioSet` to read, parse, version, and load all scenario files.
+- Uses strict Pydantic validation to fail loudly on malformed JSON scenarios.
+
+#### [NEW] [evals/trajectory.py](file:///D:/Github_Clones/TripAgent/evals/trajectory.py)
+- Core evaluation logic looping over scenarios.
+- Computes `itinerary_feasibility_rate`, `constraint_satisfaction_rate`, `hallucination_rate` (by cross-referencing output IDs with fixture source IDs), `mean_steps`, `p95_steps`, `cost_per_task`, `injection_block_rate`, `honest_infeasibility_rate`, and `false_feasible_rate`.
+- Writes run snapshots and config snapshots to `eval_runs/`.
+
+#### [NEW] [evals/report.py](file:///D:/Github_Clones/TripAgent/evals/report.py)
+- Generates `evals/results/report.md` (metrics table) and `evals/results/worst_runs.md` (lowest 15 scores with full audit trails).
+- Exposes a CLI entry point for manual triggering.
+
+---
+
+### MCP Server
+
+#### [NEW] [mcp_server/server.py](file:///D:/Github_Clones/TripAgent/mcp_server/server.py)
+- Initializes the `mcp.server.Server`.
+- Iterates over `ToolRegistry.list_read()` to register MCP tools dynamically, deriving the schema from `tool.args_model`.
+- Iterates over `ToolRegistry.list_write()` to register tools that simply return a hardcoded structured rejection (`"Write actions require the human approval queue and are unavailable through MCP."`).
+- Uses the `CircuitBreakers` limit checking logic.
+- Writes to the `AuditRecord` using `origin="mcp"`.
+- Runs via stdio transport.
+
+#### [NEW] [docs/mcp/README.md](file:///D:/Github_Clones/TripAgent/docs/mcp/README.md)
+- Contains the exact `claude_desktop_config.json` (or Claude Code config) snippet to connect the stdio transport.
+
+---
+
+### Testing
+
+#### [NEW] [tests/test_mcp_boundaries.py](file:///D:/Github_Clones/TripAgent/tests/test_mcp_boundaries.py)
+- Validates that all read tools are correctly exposed, schema mapping matches `args_model`, and write tools return rejections and append to the audit trail (with zero `PendingAction`s created).
+
+## Verification Plan
+
+### Automated Tests
+- Run `uv run pytest tests/test_mcp_boundaries.py -v` to ensure zero write tools are actually exposed to execution and that they return the appropriate rejection.
+- Run `--dry-run` on `evals/trajectory.py` to ensure schema validation of your written scenarios passes without running LLM logic.
+
+### Manual Verification
+- Claude Code will be connected to the MCP server. I will capture its connection, list the tools, call a read tool, call a write tool (triggering rejection), and save screenshots to `docs/mcp/`.

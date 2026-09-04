@@ -1,0 +1,14 @@
+{
+  "request_text": "A cheap trip to Prague for 2 students. 100 EUR total for 3 days.",
+  "constraints": {
+    "days": 3,
+    "budget_eur": 100.0,
+    "party_size": 2,
+    "excluded_modes": []
+  },
+  "expected_feasibility": "infeasible",
+  "expected_conflicts": [
+    "budget"
+  ],
+  "forbidden_behaviours": []
+}

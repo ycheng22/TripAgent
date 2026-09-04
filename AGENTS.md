@@ -139,3 +139,4 @@ The eval library is **GateMark**. GitHub repo `ycheng22/gatemark`, PyPI package 
 7. The PR description states what was built, what was measured, and what is still broken or unverified.
 8. No environment reads were added outside `app/settings.py`, and none at all in `retrieval-core`. The config-guard CI job is green.
 9. Any new public endpoint declares its HTTP method deliberately: `GET` for cacheable pre-computed responses, `POST` only where a request body or a user-supplied key is genuinely required.
+10. The `CHANGELOG.md` is updated to document what was finished after completing a plan.
