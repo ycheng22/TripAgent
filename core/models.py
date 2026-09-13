@@ -82,12 +82,25 @@ class AuditRecord(BaseModel):
     validator_failures: int
     timestamp: datetime.datetime
 
+class AuditTrail(BaseModel):
+    records: list[AuditRecord] = Field(default_factory=list)
+    
+    def to_markdown(self) -> str:
+        if not self.records:
+            return "No audit records."
+        
+        md = "| step | action_type | tool_name | duration_ms | tokens_in | tokens_out | cost_usd |\n"
+        md += "|---|---|---|---|---|---|---|\n"
+        for rec in self.records:
+            md += f"| {rec.step_index} | {rec.action_type} | {rec.tool_name or 'None'} | {rec.duration_ms} | {rec.tokens_in} | {rec.tokens_out} | {rec.cost_usd:.3f} |\n"
+        return md
+
 class PlanResult(BaseModel):
     status: Literal["finalised", "infeasible", "aborted"]
     itinerary: Itinerary | None = None
     violations: list[Violation] = Field(default_factory=list)
     which_limit: str | None = None
-    audit_trail: list[AuditRecord] = Field(default_factory=list)
+    audit_trail: AuditTrail = Field(default_factory=AuditTrail)
 
 class OpeningHours(BaseModel):
     venue_id: str

@@ -2,7 +2,7 @@ from langgraph.graph import StateGraph, END
 from typing import Any
 from core.planner.state import PlannerState
 from core.planner.abort import create_abort_node
-from core.models import Constraint, Itinerary, PlanResult, AuditRecord
+from core.models import Constraint, Itinerary, PlanResult, AuditRecord, AuditTrail
 from core.planner.limits import CircuitBreakers, LimitConfig
 from retrieval_core.models import ScoredHit
 from core.planner.events import emit_event
@@ -108,7 +108,7 @@ def finalise(state: PlannerState) -> dict[str, Any]:
         status=status,
         itinerary=state.get("itinerary"),
         violations=state.get("violations", []),
-        audit_trail=state.get("audit_trail").records if state.get("audit_trail") else []
+        audit_trail=state.get("audit_trail") if state.get("audit_trail") else AuditTrail()
     )
     
     events = state.get("sse_events", [])

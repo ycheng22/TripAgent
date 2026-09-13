@@ -1,6 +1,6 @@
 from typing import Any, Callable
 from core.planner.state import PlannerState
-from core.models import PlanResult
+from core.models import PlanResult, AuditTrail
 from core.planner.limits import CircuitBreakers
 
 def create_abort_node(breakers: CircuitBreakers) -> Callable[[PlannerState], dict[str, Any]]:
@@ -15,7 +15,7 @@ def create_abort_node(breakers: CircuitBreakers) -> Callable[[PlannerState], dic
             itinerary=state.get("itinerary"),
             violations=state.get("violations", []),
             which_limit=limit or "unknown",
-            audit_trail=state.get("audit_trail").records if state.get("audit_trail") else []
+            audit_trail=state.get("audit_trail") if state.get("audit_trail") else AuditTrail()
         )
         return {"plan_result": result, "status": "aborted", "which_limit": limit}
     return abort_node

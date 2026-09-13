@@ -20,30 +20,48 @@ app.add_middleware(
 async def healthz():
     return {"status": "ok"}
 
-from fastapi.responses import StreamingResponse
 import json
 import asyncio
+import os
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+
+_demo_cache = None
+
+def get_demo_cache():
+    global _demo_cache
+    if _demo_cache is None:
+        try:
+            with open("data/demo_cache.json", "r", encoding="utf-8") as f:
+                _demo_cache = json.load(f)
+        except FileNotFoundError:
+            _demo_cache = {}
+    return _demo_cache
 
 @app.post("/plan")
-async def plan_trip(user_input: TripRequest):
+async def plan_trip(request: Request, user_input: TripRequest):
+    req_text = user_input.request_text.strip().lower()
+    cache = get_demo_cache()
+    
+    if req_text in cache:
+        async def replay_generator():
+            for ev in cache[req_text]:
+                # Fake latency for animation
+                await asyncio.sleep(0.5)
+                yield f"event: {ev['event_type']}\ndata: {json.dumps(ev['payload'])}\n\n"
+        return StreamingResponse(replay_generator(), media_type="text/event-stream")
+        
+    api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization")
+    
+    if not api_key:
+        # Structured demo mode response (not HTTP error)
+        return {
+            "status": "demo_mode",
+            "message": "API Key required for free-form requests. Please try one of the predefined demo scenarios."
+        }
+        
     graph = get_graph()
     
-    async def event_generator():
-        try:
-            # We will use graph.astream
-            async for step in graph.astream({"user_input": user_input}, stream_mode="values"):
-                # step is the current state
-                events = step.get("sse_events", [])
-                if events:
-                    # yield the latest event
-                    # the graph appends, so we just take the last one or two
-                    # Actually astream("values") yields the whole state every time a node finishes.
-                    # We can keep track of how many events we have seen to only yield new ones.
-                    pass
-        except Exception as e:
-            yield f"data: {json.dumps({'event_type': 'error', 'payload': {'detail': str(e)}})}\n\n"
-            
-    # Wait, the event generation requires tracking seen events. Let's do it cleanly.
     async def clean_event_generator():
         seen_count = 0
         try:
@@ -51,7 +69,6 @@ async def plan_trip(user_input: TripRequest):
                 events = step.get("sse_events", [])
                 while seen_count < len(events):
                     ev = events[seen_count]
-                    # Format as Server-Sent Event
                     yield f"event: {ev['event_type']}\ndata: {json.dumps(ev['payload'])}\n\n"
                     seen_count += 1
         except Exception as e:

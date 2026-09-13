@@ -42,3 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Built TripAgent MCP Server (`mcp_server/server.py`) using `stdio` transport.
   - MCP securely maps `read` tools to MCP tools while intentionally exposing `write` tools only to return a programmatic rejection (forcing writes to the human approval queue).
   - Tested MCP access boundaries successfully (`test_mcp_boundaries.py`).
+
+- **Launch & Analytics (Phase 6):**
+  - Executed full trajectory evaluation suite saving runs to `eval_runs/`.
+  - Generated automated README metrics tables directly from evaluation data (0 hand-written metrics).
+  - Authored `docs/FAILURE-MODES.md` cataloging 6 specific failure root causes and justifications for "won't fix" decisions.
+  - Implemented Demo Cache architecture (`scripts/precompute_demo_scenarios.py`) and integrated it into `app/main.py`.
+  - Configured `POST /plan` to replay cached SSE events for demo scenarios and fallback to structured JSON rejection for unauthenticated free-form queries.
+  - Authored `docs/DEMO-SCENARIOS.md` with 8 curated scenarios showcasing the system's highlights.
+  - Configured automated deployments via GitHub Actions (`deploy.yml` and `keepalive.yml`) to Cloudflare Pages (Frontend) and GCP Cloud Run (Backend).
