@@ -1,10 +1,13 @@
-from pydantic import BaseModel
-from typing import Literal
-from core.models import Price
-from adapters.wikivoyage import WikivoyageAdapter
-from pathlib import Path
-import json
 import asyncio
+import json
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel
+
+from adapters.wikivoyage import WikivoyageAdapter
+from core.models import Price
+
 
 class LookupPriceArgs(BaseModel):
     item_id: str
@@ -34,8 +37,7 @@ class LookupPriceTool:
         if path.exists():
             data = json.loads(path.read_text(encoding="utf-8"))
             for t in data:
-                if t["trip_id"] == args.item_id:
-                    if "price" in t and "currency" in t:
-                        return Price(item_id=args.item_id, category=args.category, amount=t["price"], currency=t["currency"])
+                if t["trip_id"] == args.item_id and "price" in t and "currency" in t:
+                    return Price(item_id=args.item_id, category=args.category, amount=t["price"], currency=t["currency"])
                         
         return None

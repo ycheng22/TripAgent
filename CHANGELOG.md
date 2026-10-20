@@ -51,3 +51,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Configured `POST /plan` to replay cached SSE events for demo scenarios and fallback to structured JSON rejection for unauthenticated free-form queries.
   - Authored `docs/DEMO-SCENARIOS.md` with 8 curated scenarios showcasing the system's highlights.
   - Configured automated deployments via GitHub Actions (`deploy.yml` and `keepalive.yml`) to Cloudflare Pages (Frontend) and GCP Cloud Run (Backend).
+
+- **Observability & Hardening (Phase 7):**
+  - Integrated OpenTelemetry GenAI semantic conventions in `core/telemetry.py` recording spans with latency, purpose, model, and system across planner nodes and SSE streaming.
+  - Unified `AuditTrail` into a single Pydantic `BaseModel` supporting indexing, appending, and JSON/markdown export.
+  - Implemented `submit_sync` on `ApprovalQueue` enabling synchronous LangGraph execution alongside streaming async APIs.
+  - Corrected Cloudflare Pages build directory path in `deploy.yml` from `frontend` to `web`.
+  - Added dedicated OpenTelemetry span validation test suite (`tests/test_telemetry.py`).
+
+- **Real LLM Grounding & Trajectory Evaluation (Phase 8):**
+  - Designed multi-tier model provider abstraction (`providers/base.py`, `providers/openai_compatible.py`, `providers/factory.py`) adhering to `AGENTS.md` Section 1.3:
+    - Low-cost tier routes to **DeepSeek-V4.1-Flash** (API model `deepseek-flash`) for cost-effective offline batch evaluations ($0.14/1M in, $0.28/1M out).
+    - Western-hosted tier routes to OpenAI `gpt-4o-mini` for user-facing requests.
+  - Replaced rule-based drafting stub with LLM structured generation (`agenerate_structured`), injecting retrieved venues and GTFS transit legs inside `<DATA>...</DATA>` untrusted context tags.
+  - Implemented validator critique feedback loop injecting failure explanations into up to 3 replanning rounds.
+  - Added unit test suites for LLM drafting and providers (`tests/test_llm_drafting.py`, `tests/test_providers.py`).
+  - Executed 20-scenario trajectory evaluation with DeepSeek-V4.1-Flash (`run_deepseek_6babf91_20261020T023119Z.jsonl`):
+    - Verified 0.0% hallucination rate across all 20 scenarios using deterministic `FixtureSource` check against raw GTFS and Wikivoyage data.
+    - Measured 95.7% constraint satisfaction rate and 55.0% feasibility rate.
+    - Verified honest infeasibility detection (10.0%) on impossible requests (e.g. coach exclusion exceeding budget).
+    - Recorded average cost per itinerary of $0.0027 (~0.27 cents / run).
+  - Documented stealth schedule relaxation failure mode (35.0% false-feasible rate) in `docs/FAILURE-MODES.md`.
+
+

@@ -1,6 +1,8 @@
-from typing import Any, Literal
-from pydantic import BaseModel, Field
 import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, Field
+
 
 class Coordinate(BaseModel):
     lat: float
@@ -82,18 +84,66 @@ class AuditRecord(BaseModel):
     validator_failures: int
     timestamp: datetime.datetime
 
+    @property
+    def cost(self) -> float:
+        return self.cost_usd
+
+import json
+from pathlib import Path
+
+
 class AuditTrail(BaseModel):
     records: list[AuditRecord] = Field(default_factory=list)
     
+    def append(self, record: AuditRecord) -> None:
+        self.records.append(record)
+
+    def __len__(self) -> int:
+        return len(self.records)
+
+    def __getitem__(self, idx: int) -> AuditRecord:
+        return self.records[idx]
+
+    def __iter__(self) -> Any:
+        return iter(self.records)
+
     def to_markdown(self) -> str:
         if not self.records:
             return "No audit records."
         
-        md = "| step | action_type | tool_name | duration_ms | tokens_in | tokens_out | cost_usd |\n"
-        md += "|---|---|---|---|---|---|---|\n"
-        for rec in self.records:
-            md += f"| {rec.step_index} | {rec.action_type} | {rec.tool_name or 'None'} | {rec.duration_ms} | {rec.tokens_in} | {rec.tokens_out} | {rec.cost_usd:.3f} |\n"
-        return md
+        headers = [
+            "step_index", "action_type", "tool_name", "source_id", "source_version", 
+            "duration_ms", "tokens_in", "tokens_out", "cost_usd", "validator_failures", "timestamp"
+        ]
+        
+        lines = []
+        lines.append("| " + " | ".join(headers) + " |")
+        lines.append("|" + "|".join(["---"] * len(headers)) + "|")
+        
+        for r in self.records:
+            row = [
+                str(r.step_index),
+                r.action_type,
+                str(r.tool_name or ""),
+                str(r.source_id or ""),
+                str(r.source_version or ""),
+                str(r.duration_ms),
+                str(r.tokens_in),
+                str(r.tokens_out),
+                f"{r.cost_usd:.4f}",
+                str(r.validator_failures),
+                r.timestamp.isoformat()
+            ]
+            lines.append("| " + " | ".join(row) + " |")
+            
+        return "\n".join(lines)
+
+    def to_json(self, run_id: str, base_dir: Path) -> Path:
+        base_dir.mkdir(parents=True, exist_ok=True)
+        out_path = base_dir / f"{run_id}.json"
+        data = [json.loads(r.model_dump_json()) for r in self.records]
+        out_path.write_text(json.dumps(data, indent=2))
+        return out_path
 
 class PlanResult(BaseModel):
     status: Literal["finalised", "infeasible", "aborted"]

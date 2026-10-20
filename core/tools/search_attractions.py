@@ -1,10 +1,13 @@
-from pydantic import BaseModel
-from typing import Literal
-from core.models import Venue, Coordinate
-from adapters.wikivoyage import WikivoyageAdapter
-from adapters.static_retriever import StaticRetriever
-from retrieval_core.models import Query
 import asyncio
+from typing import Literal
+
+from pydantic import BaseModel
+from retrieval_core.models import Query  # type: ignore[import-untyped]
+
+from adapters.static_retriever import StaticRetriever
+from adapters.wikivoyage import WikivoyageAdapter
+from core.models import Coordinate, Venue
+
 
 class SearchAttractionsArgs(BaseModel):
     city: str

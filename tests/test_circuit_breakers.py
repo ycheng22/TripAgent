@@ -1,5 +1,6 @@
 from core.planner.limits import CircuitBreakers, LimitConfig
 
+
 def test_max_steps_breach():
     config = LimitConfig(max_steps=3)
     breakers = CircuitBreakers(config)

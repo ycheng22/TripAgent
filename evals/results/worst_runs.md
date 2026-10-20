@@ -6,9 +6,17 @@
 **Violations**: []
 
 ### scenario_ai_02.json
-**Status**: finalised
+**Status**: infeasible
 **Hallucinated**: False
-**Violations**: []
+**Violations**: [
+  {
+    "validator": "budget_validator",
+    "severity": "hard",
+    "step_index": null,
+    "explanation": "Total cost 69.9 exceeds budget of 50.0.",
+    "breached_constraint": "budget"
+  }
+]
 
 ### scenario_ai_03.json
 **Status**: finalised
@@ -61,9 +69,17 @@
 **Violations**: []
 
 ### scenario_ai_13.json
-**Status**: finalised
+**Status**: infeasible
 **Hallucinated**: False
-**Violations**: []
+**Violations**: [
+  {
+    "validator": "budget_validator",
+    "severity": "hard",
+    "step_index": null,
+    "explanation": "Total cost 89.0 exceeds budget of 80.0.",
+    "breached_constraint": "budget"
+  }
+]
 
 ### scenario_ai_14.json
 **Status**: finalised

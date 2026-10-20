@@ -1,12 +1,12 @@
 import asyncio
-import sys
 import json
+
+from mcp import types
 from mcp.server import Server
-import mcp.types as types
 from mcp.server.stdio import stdio_server
 from pydantic import BaseModel
-from core.tools.base import ToolRegistry
 
+from core.tools.base import ToolRegistry
 from core.tools.book_transit import BookTransitTool
 from core.tools.estimate_walk_time import EstimateWalkTimeTool
 from core.tools.find_transit_trips import FindTransitTripsTool
@@ -15,6 +15,7 @@ from core.tools.hold_reservation import HoldReservationTool
 from core.tools.lookup_price import LookupPriceTool
 from core.tools.search_attractions import SearchAttractionsTool
 from core.tools.send_confirmation import SendConfirmationTool
+
 
 def get_registry() -> ToolRegistry:
     registry = ToolRegistry()

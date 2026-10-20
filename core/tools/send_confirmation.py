@@ -1,7 +1,10 @@
-from pydantic import BaseModel
-from typing import Literal
 import hashlib
+from typing import Literal
+
+from pydantic import BaseModel
+
 from core.models import SendResult
+
 
 class SendConfirmationArgs(BaseModel):
     itinerary_id: str

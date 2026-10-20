@@ -1,6 +1,8 @@
-from adapters.wikivoyage import WikivoyageAdapter
+
 from retrieval_core.adapters.base import DocumentAdapter
-from typing import get_type_hints, Any
+
+from adapters.wikivoyage import WikivoyageAdapter
+
 
 def test_adapter_protocol():
     adapter = WikivoyageAdapter()

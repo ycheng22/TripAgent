@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.settings import settings
-from core.models import TripRequest, Itinerary
-from core.planner.graph import get_graph
-from core.approval import get_approval_queue
 from pydantic import BaseModel
+
+from app.settings import settings
+from core.approval import get_approval_queue
+from core.models import TripRequest
+from core.planner.graph import get_graph
 
 app = FastAPI(title="TripAgent API")
 
@@ -20,9 +21,9 @@ app.add_middleware(
 async def healthz():
     return {"status": "ok"}
 
-import json
 import asyncio
-import os
+import json
+
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 
@@ -51,26 +52,19 @@ async def plan_trip(request: Request, user_input: TripRequest):
                 yield f"event: {ev['event_type']}\ndata: {json.dumps(ev['payload'])}\n\n"
         return StreamingResponse(replay_generator(), media_type="text/event-stream")
         
-    api_key = request.headers.get("X-API-Key") or request.headers.get("Authorization")
-    
-    if not api_key:
-        # Structured demo mode response (not HTTP error)
-        return {
-            "status": "demo_mode",
-            "message": "API Key required for free-form requests. Please try one of the predefined demo scenarios."
-        }
-        
+    from core.telemetry import trace_genai_span
     graph = get_graph()
     
     async def clean_event_generator():
         seen_count = 0
         try:
-            async for step in graph.astream({"user_input": user_input}, stream_mode="values"):
-                events = step.get("sse_events", [])
-                while seen_count < len(events):
-                    ev = events[seen_count]
-                    yield f"event: {ev['event_type']}\ndata: {json.dumps(ev['payload'])}\n\n"
-                    seen_count += 1
+            with trace_genai_span("sse_plan_stream", purpose="user_plan_stream"):
+                async for step in graph.astream({"request": user_input}, stream_mode="values"):
+                    events = step.get("sse_events", [])
+                    while seen_count < len(events):
+                        ev = events[seen_count]
+                        yield f"event: {ev['event_type']}\ndata: {json.dumps(ev['payload'], default=str)}\n\n"
+                        seen_count += 1
         except Exception as e:
             yield f"event: error\ndata: {json.dumps({'detail': str(e)})}\n\n"
 

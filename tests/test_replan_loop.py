@@ -1,8 +1,9 @@
+from core.audit import AuditTrail
+from core.models import TripRequest
 from core.planner.graph import create_planner_graph
 from core.planner.limits import CircuitBreakers, LimitConfig
-from core.models import TripRequest
-from core.audit import AuditTrail
 from tests.test_validators import get_fixture
+
 
 def test_replan_loop():
     breakers = CircuitBreakers(LimitConfig(max_replans=2))

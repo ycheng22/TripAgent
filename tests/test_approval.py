@@ -1,8 +1,9 @@
+
 import pytest
-import asyncio
+
 from core.approval import ApprovalQueue
-from core.models import PendingAction, Constraint
 from core.tools.base import ToolRegistry
+
 
 # Mock tool
 class MockTool:

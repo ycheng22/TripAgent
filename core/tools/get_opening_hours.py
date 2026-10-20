@@ -1,9 +1,12 @@
-from pydantic import BaseModel
-from typing import Literal
-import datetime
-from core.models import OpeningHours
-from adapters.wikivoyage import WikivoyageAdapter
 import asyncio
+import datetime
+from typing import Literal
+
+from pydantic import BaseModel
+
+from adapters.wikivoyage import WikivoyageAdapter
+from core.models import OpeningHours
+
 
 class GetOpeningHoursArgs(BaseModel):
     venue_id: str

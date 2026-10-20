@@ -1,5 +1,7 @@
 from typing import Protocol
-from core.models import Itinerary, Violation, TripRequest
+
+from core.models import Itinerary, TripRequest, Violation
+
 
 class Validator(Protocol):
     name: str

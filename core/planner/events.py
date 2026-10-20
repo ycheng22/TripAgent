@@ -1,6 +1,8 @@
-from pydantic import BaseModel
 import datetime
 from typing import Any
+
+from pydantic import BaseModel
+
 
 class SSEEvent(BaseModel):
     event_type: str
@@ -11,5 +13,5 @@ def emit_event(event_type: str, payload: dict[str, Any]) -> SSEEvent:
     return SSEEvent(
         event_type=event_type,
         payload=payload,
-        timestamp=datetime.datetime.now(datetime.timezone.utc)
+        timestamp=datetime.datetime.now(datetime.UTC)
     )

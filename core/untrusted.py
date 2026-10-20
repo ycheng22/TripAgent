@@ -1,5 +1,7 @@
-from pydantic import BaseModel
 import re
+
+from pydantic import BaseModel
+
 
 class UntrustedContent(BaseModel):
     raw_text: str

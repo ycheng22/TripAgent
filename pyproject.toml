@@ -13,7 +13,10 @@ dependencies = [
     "uvicorn",
     "langgraph>=0.2.0",
     "retrieval-core @ git+file:///d:/Github_Clones/RetrievalCore@v0.2.0",
-    "mcp>=1.0.0"
+    "mcp>=1.0.0",
+    "opentelemetry-api>=1.44.0",
+    "opentelemetry-sdk>=1.44.0",
+    "openai>=3.35.1",
 ]
 
 [project.optional-dependencies]
@@ -29,7 +32,7 @@ dev = [
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["app", "core", "adapters"]
+packages = ["app", "core", "adapters", "providers"]
 
 [tool.ruff]
 line-length = 88

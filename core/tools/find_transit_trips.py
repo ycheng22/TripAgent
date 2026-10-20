@@ -1,9 +1,12 @@
-from pydantic import BaseModel
-from typing import Literal
 import datetime
-from core.models import TransitLeg
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel
+
+from core.models import TransitLeg
+
 
 class FindTransitTripsArgs(BaseModel):
     from_stop: str

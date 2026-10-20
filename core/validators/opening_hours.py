@@ -1,5 +1,7 @@
-from core.models import Itinerary, Violation, TripRequest
 import datetime
+
+from core.models import Itinerary, TripRequest, Violation
+
 
 class OpeningHoursValidator:
     name: str = "opening_hours_validator"

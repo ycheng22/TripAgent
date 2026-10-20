@@ -1,7 +1,9 @@
+
 from pydantic import BaseModel
-from typing import Any
-from core.models import Violation, Itinerary
+
 from core.audit import AuditTrail
+from core.models import Itinerary
+
 
 class LimitConfig(BaseModel):
     max_steps: int = 25

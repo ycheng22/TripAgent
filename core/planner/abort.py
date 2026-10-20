@@ -1,7 +1,10 @@
-from typing import Any, Callable
-from core.planner.state import PlannerState
-from core.models import PlanResult, AuditTrail
+from collections.abc import Callable
+from typing import Any
+
+from core.models import AuditTrail, PlanResult
 from core.planner.limits import CircuitBreakers
+from core.planner.state import PlannerState
+
 
 def create_abort_node(breakers: CircuitBreakers) -> Callable[[PlannerState], dict[str, Any]]:
     def abort_node(state: PlannerState) -> dict[str, Any]:

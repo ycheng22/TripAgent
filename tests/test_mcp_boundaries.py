@@ -1,8 +1,10 @@
-import pytest
 import json
-from mcp_server.server import get_registry, generate_json_schema
-from mcp.server import Server
-import mcp.types as types
+
+import pytest
+from mcp import types
+
+from mcp_server.server import get_registry
+
 
 @pytest.mark.asyncio
 async def test_mcp_list_tools():

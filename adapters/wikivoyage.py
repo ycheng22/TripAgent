@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
-from retrieval_core.models import Document
+
+from retrieval_core.models import Document  # type: ignore[import-untyped]
+
 
 class WikivoyageAdapter:
     def __init__(self, data_dir: Path = Path("data/wikivoyage")):
@@ -12,8 +14,8 @@ class WikivoyageAdapter:
                     data = json.loads(file_path.read_text(encoding="utf-8"))
                     for venue in data:
                         self.venues[venue["venue_id"]] = venue
-                except Exception:
-                    pass
+                except (json.JSONDecodeError, OSError):
+                    continue
 
     async def get_document(self, doc_id: str) -> Document | None:
         if doc_id in self.venues:

@@ -2,8 +2,10 @@ import asyncio
 import json
 import os
 import re
-from core.planner.graph import get_graph
+
 from core.models import TripRequest
+from core.planner.graph import get_graph
+
 
 async def precompute():
     with open("docs/DEMO-SCENARIOS.md", "r", encoding="utf-8") as f:

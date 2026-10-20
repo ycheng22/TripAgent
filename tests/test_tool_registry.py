@@ -1,7 +1,9 @@
 import pytest
+
 from core.tools.base import ToolRegistry
-from core.tools.search_attractions import SearchAttractionsTool
 from core.tools.hold_reservation import HoldReservationTool
+from core.tools.search_attractions import SearchAttractionsTool
+
 
 def test_read_tool_registers():
     registry = ToolRegistry()
@@ -18,8 +20,9 @@ def test_write_tool_registers_with_idempotency_key():
     assert tool in registry.list_write()
 
 def test_write_tool_fails_without_idempotency_key():
-    from pydantic import BaseModel
     from typing import Literal
+
+    from pydantic import BaseModel
     class BadWriteTool:
         name = "bad_write"
         description = "bad"

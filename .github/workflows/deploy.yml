@@ -37,7 +37,7 @@ jobs:
           node-version: 20
       - name: Build Angular
         run: |
-          cd frontend
+          cd web
           npm ci
           npm run build -- --configuration production
         env:
@@ -48,5 +48,6 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: tripagent
-          directory: frontend/dist/tripagent/browser
+          directory: web/dist/web/browser
           branch: main
+

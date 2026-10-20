@@ -1,7 +1,10 @@
-from pydantic import BaseModel
-from typing import Literal
 import math
+from typing import Literal
+
+from pydantic import BaseModel
+
 from core.models import Coordinate
+
 
 class EstimateWalkTimeArgs(BaseModel):
     coord_a: Coordinate

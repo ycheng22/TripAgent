@@ -1,16 +1,19 @@
-import os
+import datetime
 import glob
 import json
-import datetime
+import os
+
 from pydantic import ValidationError
-from evals.models import Scenario
+
 from app.settings import settings
+from evals.models import Scenario
+
 
 class ScenarioSet:
     def __init__(self, directory: str = "evals/scenarios"):
         self.directory = directory
         self.scenarios: list[Scenario] = []
-        self.created_at = datetime.datetime.now(datetime.timezone.utc)
+        self.created_at = datetime.datetime.now(datetime.UTC)
         self.git_sha = settings.git_sha
         
         # In a real system, the scenario set version might be tracked separately.

@@ -1,4 +1,5 @@
-from core.models import Itinerary, Violation, TripRequest
+from core.models import Itinerary, TripRequest, Violation
+
 
 class ConnectivityValidator:
     name: str = "connectivity_validator"
@@ -9,7 +10,6 @@ class ConnectivityValidator:
         
         # We look for consecutive visits in different cities, without a transit leg between them
         last_city = None
-        last_step = None
         
         for step in steps:
             if step.kind == "visit" and step.venue:
@@ -21,7 +21,6 @@ class ConnectivityValidator:
                     # A robust check would trace the agent's location over time.
                     pass
                 last_city = current_city
-                last_step = step
             elif step.kind == "transit" and step.leg:
                 # Update location to destination of transit
                 # For our stub, we can just assume transit moves us to a new city if needed.
@@ -32,14 +31,19 @@ class ConnectivityValidator:
         for i in range(len(steps) - 1):
             curr_step = steps[i]
             next_step = steps[i+1]
-            if curr_step.kind == "visit" and next_step.kind == "visit":
-                if curr_step.venue and next_step.venue and curr_step.venue.city != next_step.venue.city:
-                    violations.append(Violation(
-                        validator=self.name,
-                        severity="hard",
-                        step_index=next_step.step_index,
-                        explanation=f"No transit leg exists between {curr_step.venue.city} and {next_step.venue.city}.",
-                        breached_constraint="connectivity"
-                    ))
+            if (
+                curr_step.kind == "visit"
+                and next_step.kind == "visit"
+                and curr_step.venue
+                and next_step.venue
+                and curr_step.venue.city != next_step.venue.city
+            ):
+                violations.append(Violation(
+                    validator=self.name,
+                    severity="hard",
+                    step_index=next_step.step_index,
+                    explanation=f"No transit leg exists between {curr_step.venue.city} and {next_step.venue.city}.",
+                    breached_constraint="connectivity"
+                ))
         
         return violations

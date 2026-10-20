@@ -1,5 +1,7 @@
-from typing import Literal, Any
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
 
 class ScenarioConstraints(BaseModel):
     days: int | None = None

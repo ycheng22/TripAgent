@@ -1,6 +1,9 @@
-from pydantic import BaseModel
 from typing import Literal
+
+from pydantic import BaseModel
+
 from core.models import BookingResult
+
 
 class BookTransitArgs(BaseModel):
     itinerary_id: str

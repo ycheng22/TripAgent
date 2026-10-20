@@ -1,10 +1,11 @@
-import json
 from pathlib import Path
-from core.models import Itinerary, TripRequest, Constraint
+
+from core.models import Itinerary, TripRequest
 from core.validators.budget import BudgetValidator
 from core.validators.connectivity import ConnectivityValidator
-from core.validators.opening_hours import OpeningHoursValidator
 from core.validators.geography import GeographyValidator
+from core.validators.opening_hours import OpeningHoursValidator
+
 
 def get_fixture(name: str) -> Itinerary:
     p = Path(f"tests/fixtures/must_fail/{name}.json")

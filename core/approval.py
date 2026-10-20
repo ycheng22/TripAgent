@@ -1,8 +1,10 @@
-import uuid
 import asyncio
+import uuid
 from typing import Any
-from core.models import PendingAction, Constraint
+
+from core.models import Constraint, PendingAction
 from core.tools.base import ToolRegistry
+
 
 class ApprovalQueue:
     def __init__(self, registry: ToolRegistry):
@@ -10,25 +12,28 @@ class ApprovalQueue:
         self._actions: dict[str, PendingAction] = {}
         self._lock = asyncio.Lock()
         
+    def submit_sync(self, tool_name: str, args: dict[str, Any], idempotency_key: str) -> PendingAction:
+        # Check for replay
+        for action in self._actions.values():
+            if action.idempotency_key == idempotency_key and action.status == "approved":
+                # Return as approved no-op
+                return action
+        
+        action_id = str(uuid.uuid4())
+        action = PendingAction(
+            action_id=action_id,
+            tool_name=tool_name,
+            args=args,
+            idempotency_key=idempotency_key,
+            status="pending"
+        )
+        self._actions[action_id] = action
+        return action
+
     async def submit(self, tool_name: str, args: dict[str, Any], idempotency_key: str) -> PendingAction:
         async with self._lock:
-            # Check for replay
-            for action in self._actions.values():
-                if action.idempotency_key == idempotency_key:
-                    if action.status == "approved":
-                        # Return as approved no-op
-                        return action
-            
-            action_id = str(uuid.uuid4())
-            action = PendingAction(
-                action_id=action_id,
-                tool_name=tool_name,
-                args=args,
-                idempotency_key=idempotency_key,
-                status="pending"
-            )
-            self._actions[action_id] = action
-            return action
+            return self.submit_sync(tool_name, args, idempotency_key)
+
             
     async def approve(self, action_id: str) -> PendingAction:
         async with self._lock:
@@ -75,7 +80,7 @@ class ApprovalQueue:
 # Global queue for Day 4 simplicity
 _queue = None
 
-def get_approval_queue(registry: ToolRegistry = None) -> ApprovalQueue:
+def get_approval_queue(registry: ToolRegistry | None = None) -> ApprovalQueue:
     global _queue
     if _queue is None:
         if registry is None:

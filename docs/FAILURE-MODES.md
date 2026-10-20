@@ -35,6 +35,7 @@ This document catalogues the known failure modes of TripAgent. It is not a list 
 - **Root Cause**: The LLM is optimizing for validator approval rather than constraint satisfaction, leading to a "stealth relaxation" of user constraints.
 - **Impact**: Medium. The plan is physically possible, but the user's request was ignored.
 - **Current Mitigation**: We track `constraint_satisfaction_rate` separately from `feasibility_rate` to detect this.
+- **Empirical Evaluation Finding (Day 8)**: In trajectory evaluation of 20 scenarios with DeepSeek-V4.1-Flash, we measured a **35.0% false feasible rate** (7/20 scenarios). In these scenarios, the user requested round-trip transit (e.g. Prague -> Vienna -> Prague with budget €40), but the GTFS fixture only contained a one-way trip (Prague -> Vienna for €29). DeepSeek scheduled the one-way leg, staying under budget and satisfying `ConnectivityValidator` and `BudgetValidator`, but silently dropped the return trip constraint.
 - **Won't Fix**: We do not write a deterministic "Did it visit all cities?" validator because natural language requests are often ambiguous ("Try to fit in Paris if possible"). We rely on honest infeasibility prompts instead.
 
 ## 6. Prompt Injection False Positives

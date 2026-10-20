@@ -1,6 +1,9 @@
-from pydantic import BaseModel
 from typing import Literal
+
+from pydantic import BaseModel
+
 from core.models import HoldResult
+
 
 class HoldReservationArgs(BaseModel):
     itinerary_id: str

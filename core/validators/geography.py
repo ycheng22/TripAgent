@@ -1,5 +1,7 @@
-from core.models import Itinerary, Violation, TripRequest
 import math
+
+from core.models import Itinerary, TripRequest, Violation
+
 
 class GeographyValidator:
     name: str = "geography_validator"
@@ -24,9 +26,14 @@ class GeographyValidator:
                 continue
             
             # Check travel time for consecutive visits
-            if curr_step.kind == "visit" and next_step.kind == "visit" and curr_step.venue and next_step.venue:
-                if curr_step.venue.city == next_step.venue.city:
-                    # Calculate haversine distance
+            if (
+                curr_step.kind == "visit"
+                and next_step.kind == "visit"
+                and curr_step.venue
+                and next_step.venue
+                and curr_step.venue.city == next_step.venue.city
+            ):
+                # Calculate haversine distance
                     lat1 = math.radians(curr_step.venue.coord.lat)
                     lon1 = math.radians(curr_step.venue.coord.lon)
                     lat2 = math.radians(next_step.venue.coord.lat)

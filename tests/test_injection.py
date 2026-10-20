@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
-from core.untrusted import wrap_retrieved, format_for_context, detect_injection_signals
+
+from core.untrusted import detect_injection_signals, format_for_context, wrap_retrieved
+
 
 def test_untrusted_content_isolation():
     for file_path in Path("tests/fixtures/injection").glob("*.json"):

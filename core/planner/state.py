@@ -1,7 +1,17 @@
-from typing import TypedDict, Any
-from core.models import TripRequest, Constraint, Itinerary, Violation, PlanResult, PendingAction
+from typing import Any, TypedDict
+
+from retrieval_core.models import ScoredHit  # type: ignore[import-untyped]
+
 from core.audit import AuditTrail
-from retrieval_core.models import ScoredHit
+from core.models import (
+    Constraint,
+    Itinerary,
+    PendingAction,
+    PlanResult,
+    TripRequest,
+    Violation,
+)
+
 
 class PlannerState(TypedDict):
     request: TripRequest | None
@@ -18,5 +28,6 @@ class PlannerState(TypedDict):
     which_limit: str | None
     plan_result: PlanResult | None
     pending_actions: list[PendingAction]
-    sse_events: list[dict]
+    sse_events: list[dict[str, Any]]
+    grounded_context: str | None
 

@@ -1,7 +1,7 @@
-import json
 import datetime
 from pathlib import Path
-from core.models import Itinerary, ItineraryStep, Venue, Coordinate, TransitLeg, TripRequest, Constraint
+
+from core.models import Coordinate, Itinerary, ItineraryStep, TransitLeg, Venue
 
 out_dir = Path("tests/fixtures/must_fail")
 out_dir.mkdir(parents=True, exist_ok=True)

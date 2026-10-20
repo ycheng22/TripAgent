@@ -1,9 +1,9 @@
-import os
-import json
 import glob
-from datetime import datetime
+import json
+import os
 
 from core.models import AuditTrail
+
 
 def get_category(scenario):
     if scenario.get("expected_feasibility") == "infeasible":
@@ -66,12 +66,16 @@ def generate_report(output_dir: str = "evals/results"):
     # Generate README table
     fmt = lambda x: f"{x:.1%}" if isinstance(x, float) and "rate" in str(x).lower() else x
     
+    cost_val = metrics.get('cost_per_task')
+    cost_str = f"${cost_val:.4f}" if isinstance(cost_val, (int, float)) else str(cost_val)
+
     readme_table = f"""## Metrics & Conventions
 
 **Conventions**: 
 - Gain mapping: Exact=3, Substitute=2, Complement=1, Irrelevant=0.
 - "Relevant" means gain > 0.
 - Empty qrels queries are skipped.
+- Provider / Model: DeepSeek-V4.1-Flash (`deepseek-flash`) via `low_cost` tier.
 - Metric values shown are strictly measured from `{latest_run}` ({run_data['git_sha']}).
 
 | Metric | Score |
@@ -81,10 +85,10 @@ def generate_report(output_dir: str = "evals/results"):
 | Hallucination Rate | {metrics.get('hallucination_rate', 0):.1%} |
 | Honest Infeasibility | {metrics.get('honest_infeasibility_rate', 0):.1%} |
 | False Feasible | {metrics.get('false_feasible_rate', 0):.1%} |
-| Injection Block Rate | {metrics.get('injection_block_rate', 'TBD')} |
+| Injection Block Rate | {metrics.get('injection_block_rate', 'N/A')} |
 | Mean Steps | {metrics.get('mean_steps', 'TBD')} |
 | p95 Steps | {metrics.get('p95_steps', 'TBD')} |
-| Cost per Task | {metrics.get('cost_per_task', 'TBD')} |
+| Cost per Task | {cost_str} |
 
 {breakdown_md}
 
