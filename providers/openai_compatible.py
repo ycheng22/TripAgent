@@ -24,7 +24,7 @@ class OpenAICompatibleProvider:
         self.base_url = base_url
         self.model = model
         self.provider_name = provider_name
-        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.client = AsyncOpenAI(api_key=api_key or "placeholder", base_url=base_url)
 
     def _get_client(self) -> AsyncOpenAI:
         # Check if chat completions create was mocked for unit tests
@@ -32,11 +32,14 @@ class OpenAICompatibleProvider:
         create_fn = getattr(chat_completions, "create", None)
         if create_fn is not None and hasattr(create_fn, "assert_called"):
             return self.client
-        return AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        return AsyncOpenAI(api_key=self.api_key or "placeholder", base_url=self.base_url)
 
     def _calculate_cost(self, tokens_in: int, tokens_out: int) -> float:
         model_lower = self.model.lower()
-        if "deepseek" in model_lower:
+        if "gemini" in model_lower:
+            # Gemini-3.5-flash-lite pricing ($0.075/1M input, $0.30/1M output)
+            return (tokens_in * 0.075 + tokens_out * 0.30) / 1_000_000.0
+        elif "deepseek" in model_lower:
             # DeepSeek-V4.1-Flash pricing ($0.14/1M input, $0.28/1M output)
             return (tokens_in * 0.14 + tokens_out * 0.28) / 1_000_000.0
         elif "gpt-4o-mini" in model_lower:

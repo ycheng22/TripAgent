@@ -7,11 +7,11 @@ client = TestClient(app)
 def test_sse_streaming_endpoint():
     # Test that /plan returns SSE
     with client.stream("POST", "/plan", json={
-        "request_text": "5 days / €1200 / two people / no long-distance coaches",
+        "request_text": "I want to visit Paris for 2 days. We are a couple, and we have a budget of 300 EUR. We just want to see the Eiffel Tower and maybe a museum.",
         "constraints": [],
         "party_size": 2,
-        "budget": 1200.0,
-        "days": 5
+        "budget": 300.0,
+        "days": 2
     }) as response:
         assert response.status_code == 200
         assert "text/event-stream" in response.headers["content-type"]

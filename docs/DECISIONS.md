@@ -31,4 +31,28 @@
   - **Honest Infeasibility Rate**: 10.0%
   - **Cost per Task**: $0.0027 (0.27 cents / itinerary)
 * **Stealth Schedule Relaxation (Failure Mode Analysis)**: 35.0% false-feasible rate occurs when users request round-trip travel where the GTFS schedule only contains one-way legs. The LLM schedules the single available leg within budget, which passes validators but drops the return journey constraint. Documented in `docs/FAILURE-MODES.md`.
+* **Demo Cache & UI Itinerary Rendering**:
+  - Fixed precompute script (`scripts/precompute_demo_scenarios.py`) passing `{"request": req}` to LangGraph instead of deprecated `user_input`.
+  - Recomputed all 8 demo scenarios from `docs/DEMO-SCENARIOS.md` with authentic DeepSeek-V4.1-Flash runs and persisted them to `data/demo_cache.json`.
+  - Enhanced `TimelineComponent` (`web/src/app/timeline/`) with dedicated itinerary cards rendering day chips, time ranges, venue names, Wikivoyage IDs, transit route information, and ticket prices instead of displaying raw JSON or only total cost.
+
+## Day 9: Neon DB Presets, 20 Preset Landing Cards, Rate Limiting, and Gemini 3.5 Flash-Lite
+* **Neon DB Scenario Persistence & Replay (`asyncpg`)**:
+  - Saved all 20 evaluated benchmark scenarios from `eval_runs/run_deepseek_6babf91_20261020T023119Z.jsonl` into Neon PostgreSQL (`tripagent` project/db) within the `preset_scenarios` table.
+  - Added `asyncpg>=0.29.0` runtime dependency (documented in `DECISIONS.md` per AGENTS.md Section 1).
+  - Implemented async repository in `core/db.py` with graceful fallback to `data/preset_cache.json` if Neon DB is temporarily sleeping or unreachable.
+  - Adhered strictly to AGENTS.md Rule 3: `/healthz` **never** touches PostgreSQL, preventing compute spin-up during keepalive polling.
+* **Landing Page Preset Cards (20 Scenarios)**:
+  - Display 20 preset cards on the landing page grouped by category (`All`, `Romantic`, `Transit`, `Budget`, `Accessibility`, `Family`, `Culture`, `Outdoor`, `Food & Wine`).
+  - Cards highlight destination, days, budget, party size, and expected feasibility.
+  - Clicking any card triggers instant SSE replay loaded from Neon DB, demonstrating the live planning experience with zero LLM API costs.
+* **Rate Limiting (5 calls / 10 minutes)**:
+  - Implemented in-memory sliding-window rate limiter in `core/rate_limit.py` to protect the $20 monthly budget against abuse.
+  - Custom/new scenarios are bounded to 5 live calls per 10 minutes per IP (`RATE_LIMIT_CALLS=5`, `RATE_LIMIT_WINDOW_SECONDS=600`).
+  - Breaching the limit emits a clean `rate_limit_exceeded` event and helpful UI banner without crashing the server.
+  - Preset scenarios bypass the rate limiter entirely.
+* **Default AI Model (Gemini 3.5 Flash-Lite & Failover)**:
+  - Configured `DEFAULT_AI_MODEL=gemini-3.5-flash-lite` and `DEFAULT_AI_PROVIDER=gemini` in `app/settings.py` and `.env.example`.
+  - Implemented `FailoverProvider` in `providers/factory.py` that gracefully routes calls to OpenAI `gpt-4o-mini` (with `deepseek-flash` secondary fallback) if the Gemini quota is exhausted (HTTP 402/429), maintaining high availability without user disruption.
+
 

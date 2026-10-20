@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-    Starts both TripAgent FastAPI backend and Angular frontend locally.
+    Starts both TripAgent FastAPI backend and Angular 21 frontend locally.
 
 .DESCRIPTION
     Launches:
       1. FastAPI API server via `uv run uvicorn app.main:app --reload` on port 8000.
-      2. Angular UI dev server via `npm start` in the `web/` directory on port 4200.
+      2. Angular 21 UI dev server via `npm start` in the `web/` directory on port 4200.
 
 .EXAMPLE
     .\start_local.ps1

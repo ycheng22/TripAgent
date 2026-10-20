@@ -73,3 +73,18 @@ def test_factory_creates_providers() -> None:
     assert isinstance(oa, OpenAICompatibleProvider)
     assert oa.model == "gpt-4o-mini"
     assert oa.provider_name == "openai"
+
+    # Test Gemini provider creation with failover
+    settings_gem = Settings(
+        allowed_origins=[],
+        max_steps=25,
+        max_tokens_per_task=60000,
+        max_cost_per_task=0.05,
+        max_replans=3,
+        git_sha="sha",
+        gemini_api_key="gem-key",
+        deepseek_api_key="ds-key",
+    )
+    gem = create_provider("western_hosted", settings=settings_gem)
+    assert gem.model == "gemini-3.5-flash-lite"
+    assert gem.provider_name == "gemini"

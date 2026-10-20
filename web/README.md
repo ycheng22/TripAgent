@@ -1,6 +1,6 @@
 # Web
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+This project was built with [Angular CLI](https://github.com/angular/angular-cli) version 21.2.27 (Angular 21).
 
 ## Development server
 

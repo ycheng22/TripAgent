@@ -12,6 +12,7 @@ import { ApprovalService } from '../approval.service';
 })
 export class TimelineComponent {
   @Input() events: SSEEvent[] = [];
+  @Input() isPlanning = false;
 
   constructor(private approvalService: ApprovalService) {}
 

@@ -1,43 +1,152 @@
 <div class="timeline">
-  <div class="timeline-event" *ngFor="let ev of events">
+  <div class="timeline-event" *ngFor="let ev of events" [ngClass]="ev.event_type">
     <div class="event-header">
-      <span class="event-type">{{ ev.event_type }}</span>
+      <div class="event-badge-wrap">
+        <span class="event-dot"></span>
+        <span class="event-type">{{ ev.event_type }}</span>
+      </div>
       <span class="timestamp">{{ ev.timestamp | date:'mediumTime' }}</span>
     </div>
     
     <div class="event-body" [ngSwitch]="ev.event_type">
-      <div *ngSwitchCase="'constraints_parsed'">
-        Parsed {{ ev.payload.constraints.length }} constraints.
+      <!-- CONSTRAINTS_PARSED -->
+      <div *ngSwitchCase="'constraints_parsed'" class="parsed-box">
+        <p class="summary-text">Parsed <strong>{{ ev.payload.constraints?.length || 0 }}</strong> constraints.</p>
+        <ul *ngIf="ev.payload.constraints?.length" class="constraint-list">
+          <li *ngFor="let c of ev.payload.constraints">
+            <span class="tag">{{ c.kind }}</span> {{ c.description || (c | json) }}
+          </li>
+        </ul>
       </div>
-      <div *ngSwitchCase="'drafting'">
-        Generated draft with {{ ev.payload.itinerary?.steps?.length || 0 }} steps.
+
+      <!-- RETRIEVING -->
+      <div *ngSwitchCase="'retrieving'" class="retrieval-box">
+        <p class="summary-text">
+          Retrieved <strong>{{ ev.payload.hits_count }}</strong> candidate venues & transit connections from Wikivoyage & GTFS feeds.
+        </p>
       </div>
-      <div *ngSwitchCase="'violation_found'">
-        <div class="violation" *ngFor="let v of ev.payload.violations">
-          Validator <b>{{ v.validator }}</b> found violation: {{ v.explanation }}
+      
+      <!-- DRAFTING -->
+      <div *ngSwitchCase="'drafting'" class="draft-box">
+        <p class="summary-text">
+          Generated draft itinerary with <strong>{{ ev.payload.itinerary?.steps?.length || 0 }}</strong> steps.
+        </p>
+      </div>
+      
+      <!-- VALIDATING -->
+      <div *ngSwitchCase="'validating'" class="validate-box">
+        <p class="summary-text text-muted">
+          Validated against budget, opening hours, connectivity, and geographic boundaries.
+        </p>
+      </div>
+
+      <!-- VIOLATION_FOUND -->
+      <div *ngSwitchCase="'violation_found'" class="violation-box">
+        <div class="violation-item" *ngFor="let v of ev.payload.violations">
+          <span class="validator-name">{{ v.validator }}</span>
+          <span class="violation-message">{{ v.explanation }}</span>
         </div>
       </div>
-      <div *ngSwitchCase="'awaiting_approval'">
-        <h4>Action Requires Approval</h4>
+      
+      <!-- AWAITING_APPROVAL -->
+      <div *ngSwitchCase="'awaiting_approval'" class="approval-box">
+        <div class="approval-header">
+          <span class="approval-icon">&#x26A0;</span>
+          <div>
+            <strong>Human Approval Required</strong>
+            <p class="text-muted">Agent requested booking or external state modification.</p>
+          </div>
+        </div>
         <div class="pending-action" *ngFor="let p of ev.payload.pending_actions">
-          <p>Tool: {{ p.tool_name }}</p>
-          <button (click)="approveAction(p.action_id)">Approve</button>
-          <button (click)="rejectAction(p.action_id)">Reject</button>
+          <div class="action-details">
+            <span class="tool-tag">{{ p.tool_name }}</span>
+            <span class="action-id">ID: {{ p.action_id }}</span>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-approve" (click)="approveAction(p.action_id)">Approve Action</button>
+            <button class="btn btn-reject" (click)="rejectAction(p.action_id)">Reject Action</button>
+          </div>
         </div>
       </div>
-      <div *ngSwitchCase="'infeasible'">
-        <h4 style="color: red">Plan is Infeasible</h4>
+      
+      <!-- INFEASIBLE -->
+      <div *ngSwitchCase="'infeasible'" class="infeasible-box">
+        <h4 class="infeasible-title">&#x26D4; Plan is Infeasible</h4>
+        <p>{{ ev.payload.detail || ev.payload.plan_result?.violations?.[0]?.explanation || 'The trip constraints cannot be satisfied (e.g. coach exclusion exceeds budget, or closed venue).' }}</p>
       </div>
-      <div *ngSwitchCase="'aborted'">
-        <h4 style="color: red">Run Aborted: Limit reached</h4>
+      
+      <!-- ABORTED -->
+      <div *ngSwitchCase="'aborted'" class="aborted-box">
+        <h4 class="aborted-title">Run Aborted</h4>
+        <p>{{ ev.payload.detail || 'Circuit breaker or rate limit reached safety limit.' }}</p>
       </div>
-      <div *ngSwitchCase="'finalised'">
-        <h4 style="color: green">Plan Finalised</h4>
-        <p>Total cost: {{ ev.payload.plan_result?.itinerary?.total_cost | currency:'EUR' }}</p>
+
+      <!-- RATE_LIMIT_EXCEEDED -->
+      <div *ngSwitchCase="'rate_limit_exceeded'" class="rate-limit-event-box">
+        <h4 style="color: #b91c1c; margin: 0 0 6px 0;">&#x26A0; Rate Limit Exceeded (5 calls / 10m)</h4>
+        <p style="margin: 0; color: #7f1d1d; font-size: 0.9rem;">{{ ev.payload.detail }}</p>
       </div>
+      
+      <!-- FINALISED -->
+      <div *ngSwitchCase="'finalised'" class="finalised-box">
+        <div class="finalised-header">
+          <div class="finalised-title-group">
+            <span class="check-icon">&#x2714;</span>
+            <span class="finalised-title">Plan Finalised</span>
+          </div>
+          <div class="total-cost-badge">
+            Total Cost: <strong>{{ (ev.payload.plan_result?.itinerary?.total_cost ?? ev.payload.itinerary?.total_cost ?? 0) | currency:'EUR' }}</strong>
+          </div>
+        </div>
+        
+        <!-- Itinerary Steps Cards -->
+        <div class="steps-container" *ngIf="(ev.payload.plan_result?.itinerary?.steps || ev.payload.itinerary?.steps) as steps">
+          <div class="empty-steps-warning" *ngIf="steps.length === 0">
+            <em>No itinerary steps were scheduled in this run.</em>
+          </div>
+
+          <div class="step-card" *ngFor="let s of steps">
+            <div class="step-top">
+              <span class="day-chip">Day {{ s.day }}</span>
+              <span class="time-range">{{ s.starts_at | date:'shortTime' }} &ndash; {{ s.ends_at | date:'shortTime' }}</span>
+              <span class="step-cost" *ngIf="s.cost > 0">{{ s.cost | currency:'EUR' }}</span>
+              <span class="step-cost free" *ngIf="s.cost === 0">Free</span>
+            </div>
+
+            <!-- Visit details -->
+            <div *ngIf="s.kind === 'visit'" class="step-body">
+              <div class="step-icon-col">&#x1F3DB;</div>
+              <div class="step-info">
+                <div class="step-title">{{ s.venue?.name }}</div>
+                <div class="step-subtitle">{{ s.venue?.city }} &bull; Wikivoyage ID: {{ s.venue?.venue_id }}</div>
+              </div>
+            </div>
+
+            <!-- Transit details -->
+            <div *ngIf="s.kind === 'transit'" class="step-body">
+              <div class="step-icon-col">&#x1F686;</div>
+              <div class="step-info">
+                <div class="step-title">{{ s.leg?.from_stop }} &rarr; {{ s.leg?.to_stop }}</div>
+                <div class="step-subtitle">Transit: {{ s.leg?.mode | uppercase }} &bull; Trip {{ s.leg?.trip_id }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- DEFAULT -->
       <div *ngSwitchDefault>
-        <pre>{{ ev.payload | json }}</pre>
+        <pre class="raw-payload">{{ ev.payload | json }}</pre>
       </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE PLANNING INDICATOR -->
+  <div class="planning-spinner-card" *ngIf="isPlanning">
+    <div class="spinner"></div>
+    <div class="spinner-text">
+      <div class="spinner-title">TripAgent is reasoning...</div>
+      <div class="spinner-sub">Drafting grounded itinerary via LLM & running deterministic safety validators (~15&ndash;35s)</div>
     </div>
   </div>
 </div>

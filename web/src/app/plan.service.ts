@@ -8,11 +8,40 @@ export interface SSEEvent {
   timestamp: string;
 }
 
+export interface PresetScenario {
+  id: string;
+  title: string;
+  category: string;
+  request_text: string;
+  days: number;
+  budget_eur: number;
+  party_size: number;
+  expected_feasibility: string;
+  total_cost: number;
+  step_count: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PlanService {
   constructor(private zone: NgZone) {}
+
+  getPresets(): Observable<PresetScenario[]> {
+    return new Observable<PresetScenario[]>(observer => {
+      fetch(`${environment.apiBaseUrl}/api/presets`)
+        .then(res => res.json())
+        .then(data => {
+          this.zone.run(() => {
+            observer.next(data.presets || []);
+            observer.complete();
+          });
+        })
+        .catch(err => {
+          this.zone.run(() => observer.error(err));
+        });
+    });
+  }
 
   planTrip(request: any): Observable<SSEEvent> {
     return new Observable<SSEEvent>(observer => {
@@ -36,7 +65,7 @@ export class PlanService {
             buffer += decoder.decode(value, { stream: true });
             
             const lines = buffer.split('\n\n');
-            buffer = lines.pop() || ''; // Keep the incomplete line in the buffer
+            buffer = lines.pop() || ''; // Keep incomplete line in the buffer
             
             for (const chunk of lines) {
               const eventMatch = chunk.match(/event:\s*(.+)/);
@@ -44,10 +73,14 @@ export class PlanService {
               
               if (eventMatch && dataMatch) {
                 const evType = eventMatch[1].trim();
-                const payload = JSON.parse(dataMatch[1].trim());
-                this.zone.run(() => {
-                  observer.next({ event_type: evType, payload, timestamp: new Date().toISOString() });
-                });
+                try {
+                  const payload = JSON.parse(dataMatch[1].trim());
+                  this.zone.run(() => {
+                    observer.next({ event_type: evType, payload, timestamp: new Date().toISOString() });
+                  });
+                } catch {
+                  // Ignore JSON parse errors for incomplete chunks
+                }
               }
             }
             read();

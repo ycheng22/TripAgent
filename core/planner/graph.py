@@ -505,9 +505,15 @@ def get_graph(provider: LLMProvider | None = None) -> CompiledStateGraph:  # typ
         active_provider: LLMProvider | None = None
         try:
             tier: Literal["low_cost", "western_hosted"] = (
-                "low_cost" if settings.default_eval_provider == "deepseek" else "western_hosted"
+                "western_hosted"
+                if settings.default_ai_provider in ["gemini", "openai"]
+                else "low_cost"
             )
-            key = settings.deepseek_api_key if tier == "low_cost" else settings.openai_api_key
+            key = (
+                settings.gemini_api_key
+                or settings.openai_api_key
+                or settings.deepseek_api_key
+            )
             if key and key.strip():
                 active_provider = create_provider(tier, settings=settings)
         except (ValueError, KeyError, AttributeError, OSError):

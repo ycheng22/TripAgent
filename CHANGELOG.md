@@ -71,6 +71,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Measured 95.7% constraint satisfaction rate and 55.0% feasibility rate.
     - Verified honest infeasibility detection (10.0%) on impossible requests (e.g. coach exclusion exceeding budget).
     - Recorded average cost per itinerary of $0.0027 (~0.27 cents / run).
-  - Documented stealth schedule relaxation failure mode (35.0% false-feasible rate) in `docs/FAILURE-MODES.md`.
+  - Upgraded frontend to **Angular 21** (`@angular/core@21.2.25`, `@angular/cli@21.2.27`, `zone.js@0.15.1`, `typescript@5.9.3`) with static build output for Cloudflare Pages.
+  - Corrected state key bug in `scripts/precompute_demo_scenarios.py` and regenerated `data/demo_cache.json` with genuine DeepSeek-V4.1-Flash runs for all 8 demo scenarios.
+  - Enhanced Angular `TimelineComponent` with rich itinerary cards rendering Day numbers, verified Wikivoyage venue details, GTFS transit routes, time blocks, and ticket costs.
+
+- **Neon DB Presets, Rate Limiting & Gemini 3.5 Flash-Lite (Phase 9):**
+  - Seeded all 20 evaluated benchmark scenarios into Neon PostgreSQL (`preset_scenarios` table) with structured metadata, category tags, and full SSE events for instant replay.
+  - Built an async repository in `core/db.py` using `asyncpg` with graceful fallback to `data/preset_cache.json` for resilience and zero unexpected compute cost.
+  - Implemented 20 interactive preset scenario cards on the Angular landing page with real-time category filtering (`Romantic`, `Transit`, `Budget`, `Accessibility`, `Family`, etc.) and instant SSE replay from database.
+  - Enforced a sliding-window in-memory rate limiter in `core/rate_limit.py` restricting custom/new scenarios to 5 calls per 10 minutes per IP (`RATE_LIMIT_CALLS=5`, `RATE_LIMIT_WINDOW_SECONDS=600`) while allowing unlimited preset scenario exploration.
+  - Configured default AI model to Google Gemini `gemini-3.5-flash-lite` (`DEFAULT_AI_PROVIDER=gemini`) with an automated `FailoverProvider` to OpenAI `gpt-4o-mini` (with `deepseek-flash` secondary fallback) to ensure 100% service uptime during quota limits.
 
 

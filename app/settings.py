@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 from pydantic import BaseModel
 
@@ -16,6 +16,13 @@ class Settings(BaseModel):
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     default_eval_provider: str = "deepseek"
+    gemini_api_key: str | None = None
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    default_ai_provider: str = "gemini"
+    default_ai_model: str = "gemini-3.5-flash-lite"
+    live_rate_limit_max_calls: int = 5
+    live_rate_limit_window_seconds: int = 600
+    database_url: str | None = None
 
 
 def get_git_sha() -> str:
@@ -60,7 +67,7 @@ def load_settings() -> Settings:
     def get_val(key: str, default: str = "") -> str:
         return os.environ.get(key) or file_vars.get(key) or default
 
-    origins_raw = get_val("ALLOWED_ORIGINS", "")
+    origins_raw = get_val("ALLOWED_ORIGINS", "http://localhost:4200,https://tripagent.vectorlab.me")
     origins = [x.strip() for x in origins_raw.split(",") if x.strip()]
 
     return Settings(
@@ -74,6 +81,13 @@ def load_settings() -> Settings:
         deepseek_api_key=get_val("DEEPSEEK_API_KEY") or None,
         deepseek_base_url=get_val("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
         default_eval_provider=get_val("DEFAULT_EVAL_PROVIDER", "deepseek"),
+        gemini_api_key=get_val("GEMINI_API_KEY") or None,
+        gemini_base_url=get_val("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/"),
+        default_ai_provider=get_val("DEFAULT_AI_PROVIDER", "gemini"),
+        default_ai_model=get_val("DEFAULT_AI_MODEL", "gemini-3.5-flash-lite"),
+        live_rate_limit_max_calls=int(get_val("LIVE_RATE_LIMIT_MAX_CALLS", "5")),
+        live_rate_limit_window_seconds=int(get_val("LIVE_RATE_LIMIT_WINDOW_SECONDS", "600")),
+        database_url=get_val("DATABASE_URL") or None,
     )
 
 

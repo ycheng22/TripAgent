@@ -65,7 +65,7 @@ flowchart TD
 ## Live Demo
 
 - **Web Application**: [https://tripagent.vectorlab.me](https://tripagent.vectorlab.me)
-- **Deployment Topology**: Angular static frontend deployed to **Cloudflare Pages**; FastAPI async backend deployed to **GCP Cloud Run** (`*.run.app`).
+- **Deployment Topology**: Angular 21 static frontend deployed to **Cloudflare Pages**; FastAPI async backend deployed to **GCP Cloud Run** (`*.run.app`).
 
 ---
 
