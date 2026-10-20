@@ -67,7 +67,7 @@ def load_settings() -> Settings:
     def get_val(key: str, default: str = "") -> str:
         return os.environ.get(key) or file_vars.get(key) or default
 
-    origins_raw = get_val("ALLOWED_ORIGINS", "http://localhost:4200,https://tripagent.vector.me")
+    origins_raw = get_val("ALLOWED_ORIGINS", "http://localhost:4200,https://tripagent.vectorlab.me")
     origins = [x.strip() for x in origins_raw.split(",") if x.strip()]
 
     return Settings(

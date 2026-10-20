@@ -119,6 +119,27 @@ jobs:
           fi
           payload="$(jq --null-input --compact-output --arg name "$CUSTOM_DOMAIN" '{name: $name}')"
           curl --fail-with-body --silent --show-error --request POST "$endpoint" --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" --header "Content-Type: application/json" --data "$payload"
+      - name: Ensure Cloudflare Pages DNS record exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CUSTOM_DOMAIN: ${{ vars.CLOUDFLARE_CUSTOM_DOMAIN }}
+          PAGES_PROJECT_DOMAIN: ${{ vars.CLOUDFLARE_PAGES_PROJECT_DOMAIN }}
+          ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          set -euo pipefail
+          endpoint="https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records"
+          existing="$(curl --fail-with-body --silent --show-error --get "$endpoint" --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" --data-urlencode "type=CNAME" --data-urlencode "name=${CUSTOM_DOMAIN}")"
+          record_count="$(jq '.result | length' <<<"$existing")"
+          if [ "$record_count" -gt 0 ]; then
+            existing_target="$(jq --raw-output '.result[0].content' <<<"$existing")"
+            if [ "$existing_target" != "$PAGES_PROJECT_DOMAIN" ]; then
+              echo "Refusing to replace existing DNS record for ${CUSTOM_DOMAIN}." >&2
+              exit 1
+            fi
+            exit 0
+          fi
+          payload="$(jq --null-input --compact-output --arg name "$CUSTOM_DOMAIN" --arg content "$PAGES_PROJECT_DOMAIN" '{type: "CNAME", name: $name, content: $content, proxied: true, ttl: 1}')"
+          curl --fail-with-body --silent --show-error --request POST "$endpoint" --header "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" --header "Content-Type: application/json" --data "$payload"
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4
         with:

@@ -219,7 +219,7 @@ terminal statuses: finalised | infeasible | aborted
 
 ### 9.1 部署拓扑（决定下面所有设计）
 
-- 前端 `https://tripagent.vector.me` — Angular 静态产物，Cloudflare Pages
+- 前端 `https://tripagent.vectorlab.me` — Angular 静态产物，Cloudflare Pages
 - 后端 `https://tripagent-xxxxx.<region>.run.app` — FastAPI，Cloud Run，**无自定义域**
 
 每一次浏览器调用都是跨源请求。
@@ -237,7 +237,7 @@ terminal statuses: finalised | infeasible | aborted
 
 ### 9.3 CORS 与前端
 
-- `allow_origins` 是显式白名单，从 `Settings` 读：`https://tripagent.vector.me` 加本地 `http://localhost:4200`。**禁止 `"*"`，开发环境也不例外。**
+- `allow_origins` 是显式白名单，从 `Settings` 读：`https://tripagent.vectorlab.me` 加本地 `http://localhost:4200`。**禁止 `"*"`，开发环境也不例外。**
 - `allow_methods` 只开 `GET`、`POST`、`OPTIONS`；`allow_credentials` 关闭。
 - 后端地址由「服务名-项目号-区域」决定，换区域或换项目就会变。前端必须把它作为**构建期环境变量**注入（`environment.prod.ts` 从 CI 变量读），**不得硬编码**。
 - 匿名访客只能点预置场景。自由输入框在未提供 API key 时**禁用并提示原因**，不要返回错误页。
@@ -295,7 +295,7 @@ terminal statuses: finalised | infeasible | aborted
 | **T1** 校验层 | 四个校验器 + 回炉循环 | 10 个必然失败用例**全部**被**预期那个**校验器拦住；三轮后以 `infeasible` 收场；**全仓库搜不到校验器里的模型调用** |
 | **T2** 端到端 + 安全 | 真实读工具、不可信输入隔离、审批队列、SSE、时间线 UI | 一条完整行程过全部四个校验器；10 条注入全拦、对照未误杀；写工具未批准不可执行（有测试） |
 | **T3** 评测 + MCP | trajectory harness、report、MCP server（只暴露读工具） | 能加载并校验全部场景；Claude Code 实测调通两个读工具、写工具被明确拒绝、**截图入库** |
-| **T4** 跑分 + 上线 | 全量跑分、预置缓存、部署、README 收口 | 七项指标真实；8 条预置零模型调用；`tripagent.vector.me` 手机可匿名访问；`FAILURE-MODES.md` ≥ 6 类根因 |
+| **T4** 跑分 + 上线 | 全量跑分、预置缓存、部署、README 收口 | 七项指标真实；8 条预置零模型调用；`tripagent.vectorlab.me` 手机可匿名访问；`FAILURE-MODES.md` ≥ 6 类根因 |
 
 > **T1 不许延期或缩水。** 校验层是 P2 唯一的差异化，砍掉它这个项目就和市面上任何一个旅行 Agent demo 没有区别。宁可砍多城场景、砍地图、砍 UI 精致度。
 

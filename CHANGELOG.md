@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a reproducible deployment pipeline that tests before publishing a Git-SHA-tagged Cloud Run image and then deploys the Angular static build to Cloudflare Pages.
 - Moved production API URL generation to the CI build, with the generated Angular environment file excluded from version control.
 - Configured Cloud Run runtime secret references for the Neon database and active Gemini/DeepSeek provider keys; no credential values are committed to the repository.
+- Corrected the frontend production domain to `tripagent.vectorlab.me` and ensure its Cloudflare Pages DNS record is created during deployment.
 
 ## [0.1.0] - 2026-09-02
 
