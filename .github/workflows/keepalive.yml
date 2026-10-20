@@ -1,13 +1,22 @@
-name: Keepalive
+name: Keep TripAgent Warm
 
 on:
   schedule:
-    - cron: '*/10 12-23 * * *' # Every 10 mins for 12 hours a day
+    - cron: "*/10 12-23 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: tripagent-keepalive
+  cancel-in-progress: true
 
 jobs:
-  ping-healthz:
+  ping-keepalive:
+    if: vars.CLOUD_RUN_URL != ''
     runs-on: ubuntu-latest
     steps:
-      - name: Ping API
-        run: |
-          curl -f -s ${{ secrets.API_BASE_URL }}/healthz > /dev/null
+      - name: Ping application keepalive endpoint
+        env:
+          CLOUD_RUN_URL: ${{ vars.CLOUD_RUN_URL }}
+        run: curl --fail --silent --show-error --max-time 10 "${CLOUD_RUN_URL}/ping" > /dev/null

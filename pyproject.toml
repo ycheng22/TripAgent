@@ -12,7 +12,7 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "langgraph>=0.2.0",
-    "retrieval-core @ git+file:///d:/Github_Clones/RetrievalCore@v0.2.0",
+    "retrieval-core @ git+https://github.com/ycheng22/RetrievalCore.git@c9e6a9bce1167e16295eef3005ec93ba3d8715c5",
     "mcp>=1.0.0",
     "opentelemetry-api>=1.44.0",
     "opentelemetry-sdk>=1.44.0",

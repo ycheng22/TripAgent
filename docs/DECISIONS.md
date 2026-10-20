@@ -1,5 +1,12 @@
 # Decisions Log
 
+## Deployment: Cloud Run and Cloudflare Pages
+* **Immutable backend artifact**: TripAgent builds a Python 3.12 container in GitHub Actions and publishes it to Artifact Registry with the Git SHA as its only deploy tag. Cloud Run deploys that immutable image, rather than a source deployment, so a running revision can be traced to an exact commit and rolled back.
+* **Runtime configuration**: Non-secret deployment settings are injected from GitHub Actions repository variables. Database and model-provider credentials are stored in Google Secret Manager and mounted into Cloud Run as environment variables. `app/settings.py` remains the application’s sole environment reader.
+* **Frontend API configuration**: The Angular production environment file is generated only during CI from the Cloud Run deployment output. It is ignored by Git, leaving the local development API URL unchanged and preventing a mutable `*.run.app` endpoint from entering frontend source.
+* **Frontend build budgets**: The component-style production error budget is 5 kB. This accommodates the measured 4.61 kB largest current component stylesheet while retaining a warning threshold at 4 kB and preventing unbounded style growth.
+* **Deployment topology and cost**: The static Angular build is uploaded directly to Cloudflare Pages. The API remains on its generated `*.run.app` address; it has no custom domain or Cloudflare proxy. Cloud Run uses `min-instances=0` and `max-instances=3`, while the scheduled keepalive calls database-free `GET /ping`.
+
 ## Day 3: Foundation
 * **State Machine Tools**: Tools are strictly partitioned into "read" (automatically executed) and "write" (paused for human approval).
 * **Idempotency**: Implemented `ApprovalQueue` where write tools are mapped with `itinerary_id + step_index + resource_id`.

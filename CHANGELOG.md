@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Added a reproducible deployment pipeline that tests before publishing a Git-SHA-tagged Cloud Run image and then deploys the Angular static build to Cloudflare Pages.
+- Moved production API URL generation to the CI build, with the generated Angular environment file excluded from version control.
+- Configured Cloud Run runtime secret references for the Neon database and active Gemini/DeepSeek provider keys; no credential values are committed to the repository.
+
 ## [0.1.0] - 2026-09-02
 
 ### Added

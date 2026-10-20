@@ -31,6 +31,12 @@ async def healthz():
     return {"status": "ok"}
 
 
+@app.get("/ping")
+async def ping():
+    """Keepalive endpoint. MUST NOT touch the database."""
+    return {"status": "pong", "version": settings.git_sha}
+
+
 @app.get("/api/presets")
 @app.get("/presets")
 async def list_presets():

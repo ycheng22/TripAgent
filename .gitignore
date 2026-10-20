@@ -78,3 +78,8 @@ uv.lock
 
 # App-specific
 audit_trails/
+
+# Generated frontend build configuration and output
+web/src/environments/environment.production.ts
+web/dist/
+web/node_modules/
